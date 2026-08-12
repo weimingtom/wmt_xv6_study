@@ -193,7 +193,9 @@ L8606, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/sh.c#L58
 L????, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/sh.c#L78   
 L8626, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/sh.c#L78   
 如果 `exec` 成功被调用，子进程就会转而去执行 `echo` 程序里的指令。在某个时刻 `echo` 会调用 `exit`，这会使得其父进程从 `wait` 返回。
-L8701,  
+(注：这里的L8701是指从main函数中的 `wait` 返回, L8701指代main函数)    
+L????, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/sh.c#L145  
+L8701, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/sh.c#L145  
 你可能会疑惑为什么 `fork` 和 `exec` 为什么没有被合并成一个调用，我们之后将会发现，将创建进程——加载程序分为两个过程是一个非常机智的设计。
 
 xv6 通常隐式地分配用户的内存空间。`fork` 在子进程需要装入父进程的内存拷贝时分配空间，`exec` 在需要装入可执行文件时分配空间。一个进程在需要额外内存时可以通过调用 `sbrk(n)` 来增加 n 字节的数据内存。 `sbrk` 返回新的内存的地址。
