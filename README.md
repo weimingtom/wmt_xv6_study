@@ -187,10 +187,11 @@ xv6 shell 用以上调用为用户执行程序。shell 的主要结构很简单�
 L8001, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/sh.c#L145  
 L8701, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/sh.c#L145  
 主循环通过 `getcmd` 读取命令行的输入，然后它调用 `fork` 生成一个 shell 进程的副本。父 shell 调用 `wait`，而子进程执行用户命令。举例来说，用户在命令行输入“echo hello”，`getcmd` 会以 `echo hello` 为参数调用 `runcmd`（7906）,   
-L7906,  
-L8606,  
+L7906, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/sh.c#L58   
+L8606, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/sh.c#L58  
 由 `runcmd` 执行实际的命令。对于 `echo hello`, `runcmd` 将调用 `exec` 。
-L8626,  
+L????, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/sh.c#L78   
+L8626, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/sh.c#L78   
 如果 `exec` 成功被调用，子进程就会转而去执行 `echo` 程序里的指令。在某个时刻 `echo` 会调用 `exit`，这会使得其父进程从 `wait` 返回。
 L8701,  
 你可能会疑惑为什么 `fork` 和 `exec` 为什么没有被合并成一个调用，我们之后将会发现，将创建进程——加载程序分为两个过程是一个非常机智的设计。
@@ -253,8 +254,8 @@ if(fork() == 0) {
 子进程关闭文件描述符0后，我们可以保证`open` 会使用0作为新打开的文件 `input.txt`的文件描述符（因为0是 `open` 执行时的最小可用文件描述符）。之后 `cat` 就会在标准输入指向 `input.txt` 的情况下运行。
 
 xv6 的 shell 正是这样实现 I/O 重定位的（7930）。  
-L7930,  
-L8630,  
+L7930, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/sh.c#L82   
+L8630, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/sh.c#L82  
 在 shell 的代码中，记得这时 `fork` 出了子进程，在子进程中 `runcmd` 会调用 `exec` 加载新的程序。现在你应该很清楚为何 `fork` 和 `exec` 是单独的两种系统调用了吧。这种区分使得 shell 可以在子进程执行指定程序之前对子进程进行修改。
 
 虽然 `fork` 复制了文件描述符，但每一个文件当前的偏移仍然是在父子进程之间共享的，考虑下面这个例子：
@@ -313,8 +314,8 @@ if(fork() == 0) {
 如果数据没有准备好，那么对管道执行的`read`会一直等待，直到有数据了或者其他绑定在这个管道写端口的描述符都已经关闭了。在后一种情况中，`read` 会返回 0，就像是一份文件读到了最后。读操作会一直阻塞直到不可能再有新数据到来了，这就是为什么我们在执行 `wc` 之前要关闭子进程的写端口。如果 `wc` 指向了一个管道的写端口，那么 `wc` 就永远看不到 eof 了。
 
 xv6 shell 对管道的实现（比如 `fork sh.c | wc -l`）和上面的描述是类似的（7950行）。
-L7950,  
-L8650,  
+L7950, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/sh.c#L100   
+L8650, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/sh.c#L100  
 子进程创建一个管道连接管道的左右两端。然后它为管道左右两端都调用 `runcmd`，然后通过两次 `wait` 等待左右两端结束。管道右端可能也是一个带有管道的指令，如 `a | b | c`, 它 `fork` 两个新的子进程（一个 `b` 一个 `c`），因此，shell 可能创建出一颗进程树。树的叶子节点是命令，中间节点是进程，它们会等待左子和右子执行结束。理论上，你可以让中间节点都运行在管道的左端，但做的如此精确会使得实现变得复杂。
 
 pipe 可能看上去和临时文件没有什么两样：命令
@@ -395,8 +396,8 @@ unlink("/tmp/xyz");
 xv6 关于文件系统的操作都被实现为用户程序，诸如 `mkdir`，`ln`，`rm` 等等。这种设计允许任何人都可以通过用户命令拓展 shell 。现在看起来这种设计是很显然的，但是 Unix 时代的其他系统的设计都将这样的命令内置在了 shell 中，而 shell 又是内置在内核中的。
 
 有一个例外，那就是 `cd`，它是在 shell 中实现的（8016）。
-L8016,  
-L8716,  
+L8016, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/sh.c#L160  
+L8716, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/sh.c#L160    
 `cd` 必须改变 shell 自身的当前工作目录。如果 `cd` 作为一个普通命令执行，那么 shell 就会 `fork` 一个子进程，而子进程会运行 `cd`，`cd` 只会改变*子进程*的当前工作目录。父进程的工作目录保持原样。
 
 ### 现实情况
