@@ -189,7 +189,7 @@ L8701, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/sh.c#L145
 主循环通过 `getcmd` 读取命令行的输入，然后它调用 `fork` 生成一个 shell 进程的副本。父 shell 调用 `wait`，而子进程执行用户命令。举例来说，用户在命令行输入“echo hello”，`getcmd` 会以 `echo hello` 为参数调用 `runcmd`（7906）,   
 L7906, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/sh.c#L58   
 L8606, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/sh.c#L58  
-由 `runcmd` 执行实际的命令。对于 `echo hello`, `runcmd` 将调用 `exec` 。
+由 `runcmd` 执行实际的命令。对于 `echo hello`, `runcmd` 将调用 `exec` 。  
 L????, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/sh.c#L78   
 L8626, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/sh.c#L78   
 如果 `exec` 成功被调用，子进程就会转而去执行 `echo` 程序里的指令。在某个时刻 `echo` 会调用 `exit`，这会使得其父进程从 `wait` 返回。
