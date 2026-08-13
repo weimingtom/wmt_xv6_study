@@ -1,13 +1,6 @@
 # wmt_xv6_study
 [WIP] My xv6 document and sources study, based on jamesrxian/xv6-chinese
 
-## References, code
-* https://github.com/mit-pdos/xv6-public  
-* https://github.com/swbengs/Xv6_Lua_Shell  
-* https://github.com/weimingtom/wmt_ai_study/blob/master/os_001.md
-* https://github.com/salewski/xv6-minix2  
-可能可以参考一下MIPS书计算机系统设计上里面的C库  
-
 ## References, books
 * https://github.com/jamesrxian/xv6-chinese/tree/rev9
 * xv6-chinese-rev9_chrome.pdf  
@@ -17,6 +10,52 @@
 * https://www.bookstack.cn/read/xv6-chinese/README.md  
 * https://www.zhihu.com/question/22463820  
 写一个操作系统内核有多难？大概的内容、步骤是什么？  
+* https://gitee.com/qison/xv6-book-chinese  
+* https://pdos.csail.mit.edu/6.828/2016/tools.html  
+* https://pdos.csail.mit.edu/6.828/2016/xv6/book-rev9.pdf  
+* https://pdos.csail.mit.edu/6.828/2016/xv6/xv6-rev9.pdf  
+* https://github.com/ranxian/xv6-chinese  
+* http://pdos.csail.mit.edu/6.828/2012/xv6/book-rev7.pdf  
+* http://pdos.csail.mit.edu/6.828/2012/xv6/xv6-rev7.pdf  
+* 调试运行第一个xv6程序  
+https://blog.csdn.net/u011675745/article/details/122890830  
+* xv6-explained  
+https://github.com/YehudaShapira/xv6-explained/blob/master/xv6%20Code%20Explained.md  
+* Writing an OS shutdown process for QEMU (xv6)  
+https://unix.stackexchange.com/questions/645618/writing-an-os-shutdown-process-for-qemu-xv6  
+why Ctrl + a x not work ??? only use Ctrl Alt Q  
+* UNIX xv6内核源码深入剖析  
+xv6-rev11.pdf  
+https://pdos.csail.mit.edu/6.828/2018/labs/lab1  
+* xv6 bochs  
+xv6试验环境bochs及qemu搭建  
+https://blog.csdn.net/woxiaohahaa/article/details/49225447  
+https://www.cnblogs.com/Sisyphean/p/xv6_bochs.html  
+https://github.com/panks/Xv6  
+
+## References, code
+* https://github.com/mit-pdos/xv6-public  
+* https://github.com/swbengs/Xv6_Lua_Shell  
+* https://github.com/weimingtom/wmt_ai_study/blob/master/os_001.md
+* https://github.com/salewski/xv6-minix2  
+可能可以参考一下MIPS书计算机系统设计上里面的C库  
+* All Labs implementation of 6.828 2018 OS course of MIT.  
+https://github.com/k0Iry/xv6-jos-i386-lab  
+* xv6   
+https://gitee.com/hedonihilist/jos  
+* xv6-riscv  
+https://github.com/mit-pdos/xv6-riscv  
+* xv6-k210  
+https://github.com/HUST-OS/xv6-k210  
+* xv6-rpi  
+https://github.com/david50407/xv6-rpi  
+* xv6 64bit  
+https://github.com/swetland/xv6  
+* xv6 d1  
+https://github.com/michaelengel/xv6-d1  
+* xv6 exp (based on xv6-rev9)    
+https://github.com/luoszu/xv6-exp  
+https://github.com/mit-pdos/xv6-public/releases/tag/xv6-rev9  
 
 ## Debugging, -g3 -gdwarf-2, make qemu-nox-gdb    
 * 我搞明白怎么用gdb调试xv6了，而不会看到乱了的调用栈。其实很多书都没说清楚，  
@@ -44,6 +83,53 @@ connection选tcp，端口号26000
 （4）其他gdb工具也可以，例如ddd，cgdb和gdbtui
 ```
 
+## work_xv6_mingw, xv6 mingw    
+* search baidupan, work_xv6_mingw, i686-elf-tools-windows.zip, xv6_mingw_patch_v1.rar  
+```
+//-Wno-stringop-overflow  
+*(volatile char*)lastaddr = 99;  
+```
+* http://frippery.org/busybox/  
+* https://github.com/alessandromrc/i686-elf-tools  
+* https://qemu.weilnetz.de/w32/2014/
+* method 1: modify Makefile, -O2->-O0  
+on shell, Ctrl+P  
+i686-elf-addr2line -f -e kernel 80104bb5  
+* method 2, qemu gdbserver (QEMU windows version can stop itself with its GUI menu, to switch to gdb command line)    
+```
+QEMUGDB = $(shell echo "-gdb tcp:127.0.0.1:$(GDBPORT)")  
+(gdb) target remote 127.0.0.1:25500  
+```
+* https://github.com/mirokuuno/xv6-windows  
+
+## JOS  
+* (make qemu) https://github.com/woai3c/MIT6.828  
+* (unzip final.tar) https://github.com/clann24/jos  
+* https://github.com/librabyte/6.828  
+* unzip https://github.com/clann24/jos/blob/master/final/final.tar, under ubuntu 14.04 32bit    
+```
+unzip clann24_jos-master.zip
+cd /work_jos/jos-master/final/lab
+unzip final.tar
+make qemu
+
+gedit GNUmakefile, mod to gcc -pipe -std=gnu99
+CC	:= $(GCCPREFIX)gcc -pipe -std=gnu99
+gedit inc/mmu.h, and remove '(struct Segdesc)'
+
+// Null segment
+#define SEG_NULL	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }
+// Segment that is loadable but faults when used
+#define SEG_FAULT	{ 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0, 0 }
+// Normal segment
+#define SEG(type, base, lim, dpl) 			\
+```
+* https://pdos.csail.mit.edu/6.828/2010/labs/lab3/  
+make run-hello  
+* https://github.com/SmallPond/MIT6.828_OS  
+* https://gitee.com/coolloser/jos  
+* see mooc os  
+
 ## xv6 中文文档, 行号对应的版本为rev7
 update 02/25/2016
 
@@ -57,7 +143,8 @@ xv6 是 MIT 开发的一个教学用的完整的类 Unix 操作系统，并且�
 
 强烈推荐 xv6 源代码同本书一同阅读！原作和翻译中遇到的括号内的数字，都是指上面链接中文件的源代码行号。
 
-同时，我们的翻译文档也可以通过 gitbook, https://www.gitbook.io/book/th0ar/xv6-chinese 阅读  
+同时，我们的翻译文档也可以通过 gitbook, https://www.gitbook.io/book/th0ar/xv6-chinese 阅读   
+[补注] see also https://www.bookstack.cn/read/xv6-chinese/README.md   
 
 ## 译者
 
