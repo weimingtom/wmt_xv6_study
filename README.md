@@ -1,11 +1,48 @@
 # wmt_xv6_study
 [WIP] My xv6 document and sources study, based on jamesrxian/xv6-chinese
 
-## References
-* https://github.com/jamesrxian/xv6-chinese/tree/rev9
+## References, code
+* https://github.com/mit-pdos/xv6-public  
+* https://github.com/swbengs/Xv6_Lua_Shell  
 * https://github.com/weimingtom/wmt_ai_study/blob/master/os_001.md
+* https://github.com/salewski/xv6-minix2  
+可能可以参考一下MIPS书计算机系统设计上里面的C库  
+
+## References, books
+* https://github.com/jamesrxian/xv6-chinese/tree/rev9
 * xv6-chinese-rev9_chrome.pdf  
 * use vscode plugins to print, see https://blog.csdn.net/m0_68997646/article/details/128612630  
+* https://gitee.com/jindaliuzi/xv6-book-chinese  
+* https://github.com/ranxian/xv6-chinese  
+* https://www.bookstack.cn/read/xv6-chinese/README.md  
+* https://www.zhihu.com/question/22463820  
+写一个操作系统内核有多难？大概的内容、步骤是什么？  
+
+## Debugging, -g3 -gdwarf-2, make qemu-nox-gdb    
+* 我搞明白怎么用gdb调试xv6了，而不会看到乱了的调用栈。其实很多书都没说清楚，  
+包括我手头上的书。改Makefile，把-O3改成-g3 -gdwarf-2。  
+如果是xv6-rev9，有一个很明确的提示在注释上，但新版故意去掉了。  
+另外gdb甚至可以调试用户空间的程序，例如cat README，方法是  
+```
+(gdb) file _cat
+(gdb) b main
+```
+然后就可以断在main函数处
+* https://github.com/swetland/xv6  
+* eclipse-cdt调试
+```
+在ubuntu 14下用gdb和Eclipse-CDT调试xv6-public。
+（1）首先编译xv6-public xv6-rev9。最好用rev9版本，
+因为Makefile里面注释掉的-g -gdwarf-2参数，需要修改打开。
+sudo apt install qemu; make qemu-nox-gdb，用Ctrl+A X退出
+（2）打开控制台的另一个tab，用gdb调试（生成gdbinit文件，需要自己写set auto-load safe-path /）。
+（3）用Eclipse-CDT调试。sudo apt install eclipse-cdt，用eclipse命令打开，
+创建工程选择Makefile, linux gcc，
+然后添加remote gdb调试，gdb参数去掉.gdbinit留空白，目录选择xv6-public-xv6-rev9，
+调试文件选择目录下的kernel即可。
+connection选tcp，端口号26000
+（4）其他gdb工具也可以，例如ddd，cgdb和gdbtui
+```
 
 ## xv6 中文文档, 行号对应的版本为rev7
 update 02/25/2016
