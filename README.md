@@ -544,9 +544,12 @@ UNIX 将“标准”的文件描述符，管道，和便于操作它们的 shell
 
 ## 第1章
 ```
-类似这样的 %cr3 和 %cs 都是AT&T汇编语言语法下的寄存器, 用%号开头  
+类似这样的 %cr3 和 %cs 都是AT&T汇编语言语法下的寄存器, 用%号开头. 如果是Intel语法则不需要%号开头    
 AT&T汇编语言语法也适用于GCC内联汇编  
+AT&T语法下的操作符, 使用不同的字母后缀表示操作数大小, 例如movl的l代表32位, 但Intel语法不需要  
 ```
+* https://blog.csdn.net/g2h3i4j5/article/details/156031982
+* https://blog.csdn.net/wfwfunway/article/details/4029694  
 
 ### 第一个进程
 
