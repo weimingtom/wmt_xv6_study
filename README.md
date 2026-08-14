@@ -1138,15 +1138,15 @@ L????,
 中的 `ideinit`（3851）初始化磁盘驱动程序。  
 L3851,  
 L????,  
-`ideinit` 调用 `picenable` 和 `ioapicenable` 来打开 `IDE_IRQ` 中断（3856-3857）。
+`ideinit` 调用 `picenable` 和 `ioapicenable` 来打开 `IDE_IRQ` 中断（3856-3857）。  
 L3856-3857,  
 L????-????,  
 调用 `picenable` 打开单处理器的中断；`ioapicenable` 打开多处理器的中断，但只是打开最后一个 CPU 的中断（`ncpu-1`）：在一个双处理器系统上，CPU 1 专门处理磁盘中断。
 
-接下来，`ideinit` 检查磁盘硬件。它最初调用 `idewait`（3858）来等待磁盘接受命令。
+接下来，`ideinit` 检查磁盘硬件。它最初调用 `idewait`（3858）来等待磁盘接受命令。  
 L3858,  
 L????,  
-PC 主板通过 I/O 端口 0x1f7 来表示磁盘硬件的状态位。`idewait`（3833）获取状态位，  
+PC 主板通过 I/O 端口 0x1f7 来表示磁盘硬件的状态位。`idewait`（3833）获取状态位，    
 L3833,  
 L????,  
 直到 busy 位（IDE_BSY）被清除，以及 ready 位（IDE_DRDY)被设置。
