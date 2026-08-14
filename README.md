@@ -608,7 +608,7 @@ x86 的分页硬件在此时还没有开始工作；所以这时的虚拟地址�
 
 boot loader 把 xv6 内核装载到物理地址 0x100000 处。之所以没有装载到内核指令和内核数据应该出现的 0x80100000，是因为小型机器上很可能没有这么大的物理内存。而之所以在 0x100000 而不是 0x0 则是因为地址 0xa0000 到 0x100000 是属于 I/O 设备的。
 
-为了让内核的剩余部分能够运行，`entry` 的代码设置了页表，将 0x80000000（称为 `KERNBASE`（0207））开始的虚拟地址映射到物理地址 0x0 处。
+为了让内核的剩余部分能够运行，`entry` 的代码设置了页表，将 0x80000000（称为 `KERNBASE`（0207））开始的虚拟地址映射到物理地址 0x0 处。  
 L0207, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/memlayout.h#L8   
 L????, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/memlayout.h#L8   
 注意，页表经常会这样把两段不同的虚拟内存映射到相同的一段物理内存，我们将会看到更多类似的例子。
@@ -629,11 +629,11 @@ L0213, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/memlayout.h#L14
 为了让分页硬件运行起来， xv6 会设置控制寄存器 `%cr0` 中的标志位 `CR0_PG`。
 
 现在 `entry` 就要跳转到内核的 C 代码，并在内存的高地址中执行它了。首先它将栈指针 `%esp` 指向被用作栈的一段内存（1054）。    
-L1054,   
-L1158,   
+L1054, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/entry.S#L55    
+L1158, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/entry.S#L59    
 所有的符号包括 `stack` 都在高地址，所以当低地址的映射被移除时，栈仍然是可用的。最后 `entry` 跳转到高地址的 `main` 代码中。我们必须使用间接跳转，否则汇编器会生成 PC 相关的直接跳转（PC-relative direct jump），而该跳转会运行在内存低地址处的 `main`。 `main` 不会返回，因为栈上并没有返回 PC 值。好了，现在内核已经运行在高地址处的函数 `main`（1217）中了。   
-L1217,   
-L1317,  
+L1217, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/main.c#L18    
+L1317, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/main.c#L18   
 
 #### 代码：创建第一个进程
 
