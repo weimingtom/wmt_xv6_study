@@ -488,18 +488,16 @@ mknod("/console", 1, 1);
 `fstat` 可以获取一个文件描述符指向的文件的信息。它填充一个名为 `stat` 的结构体，它在 `stat.h` 中定义为：
 
 ~~~ C
-#define T_DIR  1
-#define T_FILE 2
-#define T_DEV  3
-// Directory
-// File
-// Device
-     struct stat {
-       short type;  // Type of file
-       int dev;     // File system’s disk device
-       uint ino;    // Inode number
-       short nlink; // Number of links to file
-       uint size;   // Size of file in bytes
+#define T_DIR  1   // Directory 目录
+#define T_FILE 2   // File 文件
+#define T_DEV  3   // Device 设备
+
+struct stat {
+  short type;  // Type of file 文件类型
+  int dev;     // File system's disk device 文件系统的磁盘设备
+  uint ino;    // Inode number 索引节点数
+  short nlink; // Number of links to file 链接到文件的数量
+  uint size;   // Size of file in bytes 字节单位的文件大小
 };
 ~~~
 
@@ -597,7 +595,12 @@ boot loader 把 xv6 内核装载到物理地址 0x100000 处。之所以没有�
 `entry` 中的页表的定义在 `main.c`（1311）中。  
 L1311,   
 L????,   
-我们将在第 2 章讨论页表的细节，这里简单地说明一下，页表项 0 将虚拟地址 0:0x400000 映射到物理地址 0:0x400000。只要 `entry` 的代码还运行在内存的低地址处，我们就必须这样设置，但最后这个页表项是会被移除的。页表项 512（译注：原文中似乎误写为960）将虚拟地址的 KERNBASE:KERNBASE+0x400000 映射到物理地址 0:0x400000。这个页表项将在 `entry` 的代码结束后被使用；它将内核指令和内核数据应该出现的高虚拟地址处映射到了 *boot loader* 实际将它们载入的低物理地址处。这个映射就限制内核的指令+代码必须在 4mb 以内。
+我们将在第 2 章讨论页表的细节，这里简单地说明一下，页表项 0 将虚拟地址 0:0x400000 映射到物理地址 0:0x400000。只要 `entry` 的代码还运行在内存的低地址处，我们就必须这样设置，但最后这个页表项是会被移除的。页表项 512
+```
+（译注：原文中似乎误写为960）
+注: rev9版也是改成 Entry 512 (页表项 512)  
+```
+将虚拟地址的 KERNBASE:KERNBASE+0x400000 映射到物理地址 0:0x400000。这个页表项将在 `entry` 的代码结束后被使用；它将内核指令和内核数据应该出现的高虚拟地址处映射到了 *boot loader* 实际将它们载入的低物理地址处。这个映射就限制内核的指令+代码必须在 4mb 以内。
 
 让我们回到 `entry` 中继续页表的设置工作，它将 `entrypgdir` 的物理地址载入到控制寄存器 `%cr3` 中。分页硬件必须知道 `entrypgdir` 的物理地址，因为此时它还不知道如何翻译虚拟地址；它也还没有页表。`entrypgdir` 这个符号指向内存的高地址处，但只要用宏 `V2P_WO`（0220）减去 `KERNBASE` 便可以找到其物理地址。  
 L0220,   
