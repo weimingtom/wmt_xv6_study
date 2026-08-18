@@ -338,7 +338,10 @@ L8626, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/sh.c#L78
 ```
 L????, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/sh.c#L145  
 L8701, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/sh.c#L145  
-你可能会疑惑为什么 `fork` 和 `exec` 为什么没有被合并成一个调用，我们之后将会发现，将创建进程——加载程序分为两个过程是一个非常机智的设计。
+你可能会疑惑为什么 `fork` 和 `exec` 没有被合并成一个调用，我们之后将会发现，将创建进程——加载程序分为两个过程是一个非常机智的设计。
+```
+注:这里[疑惑为什么 `fork` 和 `exec` 为什么] 有两个为什么 去掉后面的为什么
+```
 
 xv6 通常隐式地分配用户的内存空间。`fork` 在子进程需要装入父进程的内存拷贝时分配空间，`exec` 在需要装入可执行文件时分配空间。一个进程在需要额外内存时可以通过调用 `sbrk(n)` 来增加 n 字节的数据内存。 `sbrk` 返回新的内存的地址。
 
