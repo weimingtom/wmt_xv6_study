@@ -493,10 +493,14 @@ open("/a/b/c", O_RDONLY);
 
 ~~~ C
 mkdir("/dir");
-fd = open("/dir/file", O_CREATE|O_WRONGLY);
+fd = open("/dir/file", O_CREATE|O_WRONLY);
 close(fd);
 mknod("/console", 1, 1);
 ~~~
+
+```
+注:此处翻译有笔误,应该是O_WRONLY不是O_WRONGLY
+```
 
 `mknod` 在文件系统中创建一个文件，但是这个文件没有任何内容。相反，这个文件的元信息标志它是一个设备文件，并且记录主设备号和辅设备号（`mknod` 的两个参数），这两个设备号唯一确定一个内核设备。当一个进程之后打开这个文件的时候，内核将读、写的系统调用转发到内核设备的实现上，而不是传递给文件系统。
 
@@ -519,9 +523,13 @@ struct stat {
 文件名和这个文件本身是有很大的区别。同一个文件（称为 `inode`）可能有多个名字，称为**连接** (`links`)。系统调用 `link` 创建另一个文件系统的名称，它指向同一个 `inode`。下面的代码创建了一个既叫做 `a` 又叫做 `b` 的新文件。
 
 ~~~ C
-open("a", O_CREATE|O_WRONGLY);
+open("a", O_CREATE|O_WRONLY);
 link("a", "b");
 ~~~
+
+```
+注:此处翻译有笔误,应该是O_WRONLY不是O_WRONGLY
+```
 
 读写 `a` 就相当于读写 `b`。每一个 inode 都由一个唯一的 `inode 号` 直接确定。在上面这段代码中，我们可以通过 `fstat` 知道 `a` 和 `b` 都指向同样的内容：`a` 和 `b` 都会返回同样的 inode 号（`ino`），并且 `nlink` 数会设置为2。
 
