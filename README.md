@@ -226,6 +226,7 @@ zhaoty.ting@gmail.com
 ![figure0-1](./pic/f0-1.png)
 
 ```
+注:
 用户空间   shell进程    cat进程
            系统调用
 内核空间    内核
@@ -264,6 +265,7 @@ zhaoty.ting@gmail.com
 |link(f1, f2)| 给 f1 创建一个新名字(f2)|
 |unlink(filename)| 删除文件|
 ```
+注:
 图 0-2. Xv6 系统调用
 ```
 
