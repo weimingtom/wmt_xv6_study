@@ -651,61 +651,70 @@ L1317, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/main.c#L18
 
 #### 代码：创建第一个进程
 
-在 `main` 初始化了一些设备和子系统后，
-L????,  
-L1317,  
+在 `main` 初始化了一些设备和子系统后，   
+L1217, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/main.c#L18   
+L1317, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/main.c#L18   
 它通过调用 `userinit`（1239）建立了第一个进程。   
-L1239,   
-L2502,   
+L1239, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/proc.c#L79    
+L2502, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/proc.c#L77    
 `userinit` 首先调用 `allocproc`。`allocproc`（2205）的工作是在页表中分配一个槽（即结构体 `struct proc`），  
-L2205,  
-L2456,  
+L2205, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/proc.c#L35   
+L2456, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/proc.c#L36   
 并初始化进程的状态，为其内核线程的运行做准备。注意一点：`userinit` 仅仅在创建第一个进程时被调用，而 `allocproc` 创建每个进程时都会被调用。`allocproc` 会在 `proc` 的表中找到一个标记为 `UNUSED`(2211-2213)的槽位。  
-L2211-2213,   
-L2461-2463,  
+L2211-2213, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/proc.c#L41-L43  
+L2461-2463, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/proc.c#L41-L43  
+```
+注：这里rev9在这段代码外围缺少acquire(&ptable.lock);和release(&ptable.lock);  
+```
 当它找到这样一个未被使用的槽位后，`allocproc` 将其状态设置为 `EMBRYO`，使其被标记为被使用的并给这个进程一个独有的 `pid`（2201-2219）。    
-L2201-2219,   
-L2451-2468,  
+L2201-2219, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/proc.c#L31-L51    
+L2451-2468, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/proc.c#L31-L48   
+```
+注：此处存疑
+```
 接下来，它尝试为进程的内核线程分配内核栈。如果分配失败了，`allocproc` 会把这个槽位的状态恢复为 `UNUSED` 并返回0以标记失败。
 
 ![figure1-3](./pic/f1-3.png)
 
 现在 `allocproc` 必须设置新进程的内核栈，`allocproc` 以巧妙的方式，使其既能在创建第一个进程时被使用，又能在 `fork` 操作时被使用。`allocproc` 为新进程设置好一个特别准备的内核栈和一系列内核寄存器，使得进程第一次运行时会“返回”到用户空间。准备好的内核栈就像图表1-3展示的那样。`allocproc` 通过设置返回程序计数器的值，使得新进程的内核线程首先运行在 `forkret` 的代码中，然后返回到 `trapret`（2236-2241）中运行。   
-L2236-2241,   
-L2484-2489,  
+L2236-2241, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/proc.c#L66-L71    
+L2484-2489, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/proc.c#L64-L69   
+```
+注：此处存疑
+```
 内核线程会从 `p->context` 中拷贝的内容开始运行。所以我们可以通过将 `p->context->eip` 指向 `forkret` 从而让内核线程从 `forkret`（2533）的开头开始运行。   
-L2533,   
-L2788,   
+L2533, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/proc.c#L342  
+L2788, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/proc.c#L323    
 这个函数会返回到那个时刻栈底的地址。`context switch`（2708）的代码把栈指针指向 `p->context` 结尾。   
-L2708,   
-L2958,   
+L2708, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/swtch.S#L9    
+L2958, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/swtch.S#L9    
 `allocproc` 又将 `p->context` 放在栈上，并在其上方放一个指向 `trapret` 的指针；这样运行完的 `forkret` 就会返回到 `trapret` 中了。 `trapret` 接着从栈顶恢复用户寄存器然后跳转到用户进程执行。   
-L????,   
-L3277,   
+L????, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/trapasm.S#L28  
+L3277, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/trapasm.S#L28  
 这样的设置对于普通的 `fork` 和建立第一个进程都是适用的，虽然后一种情况进程会从用户空间的地址0处开始执行而非真正的从 `fork` 返回。
 
 我们将会在第3章看到，将控制权从用户转到内核是通过中断机制实现的，中断具体地说是系统调用、中断和异常。每当进程运行中要将控制权交给内核时，硬件和 xv6 的 `trap entry` 代码就会在进程的内核栈上保存用户寄存器。 `userinit` 把值写在新建的栈的顶部，使之就像进程是通过中断进入内核的一样（2264-2270）。   
-L2264-2270,   
-L2516-2522,  
+L2264-2270, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/proc.c#L91-L97    
+L2516-2522, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/proc.c#L91-L97   
 所以用于从内核返回到用户代码的通用代码也就能适用于第一个进程。这些保存的值就构成了一个结构体 `struct trapframe`，其中保存的是用户寄存器。现在如图表1-3所示，进程的内核栈已经完全准备好了。
 
 第一个进程会先运行一个小程序（`initcode.S`（7700）），   
-L7700,  
-L8400,  
+L7700, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/initcode.S  
+L8400, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/initcode.S  
 于是进程需要找到物理内存来保存这段程序。程序不仅需要被拷贝到内存中，还需要页表来指向那段内存。
 
 最初，`userinit` 调用 `setupkvm`（1737）来为进程创建一个只映射了内核区的页表。   
-L1737,   
-L1837,  
+L1737, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/vm.c#L129    
+L1837, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/vm.c#L128   
 我们将在第2章学习该函数的具体细节。总之，`setupkvm` 和 `userinit` 创建了图表1-1所示的地址空间。
 
 第一个进程内存中的初始内容是汇编过的 `initcode.S`；作为建立进程内核区的一步，链接器将这段二进制代码嵌入内核中并定义两个特殊的符号：`_binary_initcode_start` 和 `_binary_initcode_size`，用于表示这段代码的位置和大小。然后，`userinit` 调用 `inituvm`，分配一页物理内存，将虚拟地址0映射到那一段内存，并把这段代码拷贝到那一页中（1803）。   
-L1803,    
-L1903,   
+L1803, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/vm.c#L182     
+L1903, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/vm.c#L184    
 
 接下来，`userinit` 把 `trap frame`（0602）设置为用户模式：   
-L0602,   
-L0602,    
+L0602, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/x86.h#L150       
+L0602, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/x86.h#L150   
 `%cs` 寄存器保存着一个段选择器，指向段 `SEG_UCODE` ，它处于特权级 `DPL_USER`（即在用户模式而非内核模式）。类似的，`%ds, %es, %ss` 的段选择器指向段 `SEG_UDATA` 并处于特权级 `DPL_USER`。`%eflags` 的 `FL_IF` 位被设置为允许硬件中断；我们将在第3章回头看这段代码。
 
 栈指针 `%esp` 被设为了进程的最大有效虚拟内存地址，即 `p->sz`。指令指针则指向初始化代码的入口点，即地址0。
