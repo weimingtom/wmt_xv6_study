@@ -61,6 +61,19 @@ https://github.com/mit-pdos/xv6-public/releases/tag/xv6-rev9
 * 我搞明白怎么用gdb调试xv6了，而不会看到乱了的调用栈。其实很多书都没说清楚，  
 包括我手头上的书。改Makefile，把-O3改成-g3 -gdwarf-2。  
 如果是xv6-rev9，有一个很明确的提示在注释上，但新版故意去掉了。  
+https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/Makefile#L78  
+```
+CFLAGS = -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb -m32 -Werror -fno-omit-frame-pointer
+#CFLAGS = -fno-pic -static -fno-builtin -fno-strict-aliasing -fvar-tracking -fvar-tracking-assignments -O0 -g -Wall -MD -gdwarf-2 -m32 -Werror -fno-omit-frame-pointer
+CFLAGS += $(shell $(CC) -fno-stack-protector -E -x c /dev/null >/dev/null 2>&1 && echo -fno-stack-protector)
+ASFLAGS = -m32 -gdwarf-2 -Wa,-divide
+```
+https://github.com/mit-pdos/xv6-public/blob/master/Makefile#L79  
+```
+CFLAGS = -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb -m32 -Werror -fno-omit-frame-pointer
+CFLAGS += $(shell $(CC) -fno-stack-protector -E -x c /dev/null >/dev/null 2>&1 && echo -fno-stack-protector)
+ASFLAGS = -m32 -gdwarf-2 -Wa,-divide
+```
 另外gdb甚至可以调试用户空间的程序，例如cat README，方法是  
 ```
 (gdb) file _cat
