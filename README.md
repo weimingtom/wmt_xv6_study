@@ -739,38 +739,38 @@ L0602, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/x86.h#L150
 #### 运行第一个进程
 
 现在第一个进程的状态已经被设置好了，让我们来运行它。在 `main` 调用了 `userinit` 之后， `mpmain` 调用 `scheduler` 开始运行进程（1267）。   
-L1267,  
-L1367,  
+L1267, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/main.c#L62  
+L1367, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/main.c#L60   
 `scheduler`（2458）会找到一个 `p->state` 为 `RUNNABLE` 的进程 `initproc`，
-L2458,  
-L2708,  
+L2458, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/proc.c#L258   
+L2708, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/proc.c#L272   
 然后将 per-cpu 的变量 `proc` 指向该进程，接着调用 `switchuvm` 通知硬件开始使用目标进程的页表（1768）。  
-L1768,  
-L1886,  
+L1768, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/vm.c#L175   
+L1886, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/vm.c#L177  
 注意，由于 `setupkvm` 使得所有的进程的页表都有一份相同的映射，指向内核的代码和数据，所以当内核运行时我们改变页表是没有问题的。`switchuvm` 同时还设置好任务状态段 `SEG_TSS`，让硬件在进程的内核栈中执行系统调用与中断。我们将在第3章研究任务状态段。
 
 `scheduler` 接着把进程的 `p->state` 设置为 `RUNNING`，调用 `swtch`（2708），    
-L2708,  
-L2958,  
+L2708, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/swtch.S#L9    
+L2958, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/swtch.S#L9    
 切换上下文到目标进程的内核线程中。`swtch` 会保存当前的寄存器，并把目标内核线程中保存的寄存器（`proc->context`）载入到 x86 的硬件寄存器中，其中也包括栈指针和指令指针。当前的上下文并非是进程的，而是一个特殊的 per-cpu 调度器的上下文。所以 `scheduler` 会让 `swtch` 把当前的硬件寄存器保存在 per-cpu 的存储（`cpu->scheduler`）中，而非进程的内核线程上下文中。我们将在第5章讨论 `swtch` 的细节。最后的 `ret`（2727）指令从栈中弹出目标进程的 `%eip`，  
-L2727,   
-L2977,  
+L2727, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/swtch.S#L28  
+L2977, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/swtch.S#L28   
 从而结束上下文切换工作。现在处理器就运行在进程 `p` 的内核栈上了。
 
 `allocproc` 通过把 `initproc` 的 `p->context->eip` 设置为 `forkret` 使得 `ret` 开始执行 `forkret` 的代码。第一次被使用（也就是这一次）时，`forkret`（2533）会调用一些初始化函数。   
-L2533,  
-L2788,   
+L2533, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/proc.c#L323  
+L2788, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/proc.c#L342  
 注意，我们不能在 `main` 中调用它们，因为它们必须在一个拥有自己的内核栈的普通进程中运行。接下来 `forkret` 返回。由于 `allocproc` 的设计，目前栈上在 `p->context` 之后即将被弹出的字是 `trapret`，因而接下来会运行 `trapret`，此时 `%esp` 保存着 `p->tf`。`trapret（3027）`用弹出指令   
-L3027,   
-L3277,   
+L3027, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/trapasm.S#L28  
+L3277, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/trapasm.S#L28  
 从 `trap frame`（0602）中恢复寄存器，  
-L0602,   
-L0602,    
+L0602, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/x86.h#L150         
+L0602, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/x86.h#L150  
 就像 `swtch` 对内核上下文的操作一样： `popal` 恢复通用寄存器，`popl` 恢复 `%gs，%fs，%es，%ds`。`addl` 跳过 `trapno` 和 `errcode` 两个数据，最后 `iret` 弹出 `%cs，%eip，%flags，%esp，%ss`。trap frame 的内容已经转移到 CPU 状态中，所以处理器会从 trap frame 中 `%eip` 的值继续执行。对于 `initproc` 来说，这个值就是虚拟地址0，即 `initcode.S` 的第一个指令。
 
 这时 `%eip` 和 `%esp` 的值为0和4096，这是进程地址空间中的虚拟地址。处理器的分页硬件会把它们翻译为物理地址。`allocuvm` 为进程建立了页表，所以现在虚拟地址0会指向为该进程分配的物理地址处。`allocuvm` 还会设置标志位 `PTE_U` 来让分页硬件允许用户代码访问内存。`userinit` 设置了 `%cs` 的低位，   
-L????,   
-L2516,  
+L????, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/proc.c#L91  
+L2516, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/proc.c#L91   
 使得进程的用户代码运行在 CPL = 3 的情况下，这意味着用户代码只能使用带有 `PTE_U` 设置的页，而且无法修改像 `%cr3` 这样的敏感的硬件寄存器。这样，处理器就受限只能使用自己的内存了。
 
 #### 第一个系统调用：exec
@@ -778,23 +778,23 @@ L2516,
 `initcode.S` 干的第一件事是触发 `exec` 系统调用。就像我们在第0章看到的一样，`exec` 用一个新的程序来代替当前进程的内存和寄存器，但是其文件描述符、进程 id 和父进程都是不变的。
 
 `initcode.S`（7708）刚开始会将 `$argv，$init，$0` 三个值推入栈中，  
-L7708,   
-L8409,   
+L7708, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/initcode.S#L9       
+L8409, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/initcode.S#L10  
 接下来把 `%eax` 设置为 `SYS_exec` 然后执行 `int T_SYSCALL`：这样做是告诉内核运行 `exec` 这个系统调用。如果运行正常的话，`exec` 不会返回：它会运行名为 `$init` 的程序，`$init` 是一个以空字符结尾的字符串，即 `/init`（7721-7723）。   
-L7721-7723,   
-L8422-8424,   
+L7721-7723, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/initcode.S#L22-L24    
+L8422-8424, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/initcode.S#L23-L25    
 如果 `exec` 失败并且返回了，`initcode` 会循环调用一个不会返回的系统调用 `exit` 。  
-L????-????,  
-L8416-8420,  
+L????-????, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/initcode.S#L16-L20   
+L8416-8420, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/initcode.S#L17-L21   
 
 系统调用 `exec` 的参数是 `$init、$argv`。最后的`0`让这个手动构建的系统调用看起来就像普通的系统调用一样，我们会在第3章详细讨论这个问题。和之前的代码一样，xv6 努力避免为第一个进程的运行单独写一段代码，而是尽量使用通用于普通操作的代码。
 
 第2章讲了 `exec` 的具体实现，概括地讲，它会从文件中获取的 `/init` 的二进制代码代替 `initcode` 的代码。现在 `initcode` 已经执行完了，  
-L????,  
-L8400,   
+L????, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/initcode.S   
+L8400, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/initcode.S  
 进程将要运行 `/init`。 `init`（7810）会在需要的情况下创建一个新的控制台设备文件，  
-L7810,   
-L8510,   
+L7810, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/init.c#L11    
+L8510, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/init.c#L11    
 然后把它作为描述符0，1，2打开。接下来它将不断循环，开启控制台 shell，处理没有父进程的僵尸进程，直到 shell 退出，然后再反复。系统就这样运行起来了。
 
 #### 现实情况
