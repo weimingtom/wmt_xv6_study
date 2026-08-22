@@ -647,13 +647,13 @@ L1054, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/entry.S#L55
 L1158, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/entry.S#L59    
 所有的符号包括 `stack` 都在高地址，所以当低地址的映射被移除时，栈仍然是可用的。最后 `entry` 跳转到高地址的 `main` 代码中。我们必须使用间接跳转，否则汇编器会生成 PC 相关的直接跳转（PC-relative direct jump），而该跳转会运行在内存低地址处的 `main`。 `main` 不会返回，因为栈上并没有返回 PC 值。好了，现在内核已经运行在高地址处的函数 `main`（1217）中了。   
 L1217, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/main.c#L18    
-L1317, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/main.c#L18   
+L1317, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/main.c#L18   
 
 #### 代码：创建第一个进程
 
 在 `main` 初始化了一些设备和子系统后，   
 L1217, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/main.c#L18   
-L1317, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/main.c#L18   
+L1317, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/main.c#L18   
 它通过调用 `userinit`（1239）建立了第一个进程。   
 L1239, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/proc.c#L79    
 L2502, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/proc.c#L77    
