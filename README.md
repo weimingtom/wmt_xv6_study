@@ -143,6 +143,17 @@ make run-hello
 * https://gitee.com/coolloser/jos  
 * see mooc os  
 
+## Other OS study
+* 2.11 BSD Unix, PDP-11
+https://github.com/weimingtom/wmt_ai_study/blob/master/os_001.md  
+* Unix内核源码剖析
+* pdp11-js
+* minix, 操作系统设计与实现（第三版）  
+* linux 0.11 lab
+* uCLinux
+* unix v6, UnixV6  
+* SimH
+
 ## xv6 中文文档, 行号对应的版本为rev7
 update 02/25/2016
 
