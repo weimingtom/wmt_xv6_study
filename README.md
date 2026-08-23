@@ -154,6 +154,12 @@ https://github.com/weimingtom/wmt_ai_study/blob/master/os_001.md
 * unix v6, UnixV6  
 * SimH
 
+## risc-v xv6
+* https://github.com/weimingtom/wmt_riscv_study/blob/master/README.md  
+* lisp.c
+https://github.com/x653/xv6-riscv-fpga/blob/main/xv6-riscv/user/lisp.c  
+https://github.com/x653/xv6-riscv-fpga/blob/main/lisp/lisp.c  
+
 ## xv6 中文文档, 行号对应的版本为rev7
 update 02/25/2016
 
