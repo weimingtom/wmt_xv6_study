@@ -144,7 +144,7 @@ make run-hello
 * see mooc os  
 
 ## Other OS study
-* 2.11 BSD Unix, PDP-11
+* 2.11 BSD Unix, PDP-11  
 https://github.com/weimingtom/wmt_ai_study/blob/master/os_001.md  
 * Unix内核源码剖析
 * pdp11-js
@@ -153,6 +153,8 @@ https://github.com/weimingtom/wmt_ai_study/blob/master/os_001.md
 * uCLinux
 * unix v6, UnixV6  
 * SimH
+* mini-riscv-os, EN帶你寫個作業系統：來趟RISC-V開發輕旅行  
+https://github.com/weimingtom/wmt_ai_study/blob/master/fpga_cpld_001.md  
 
 ## risc-v xv6
 * (rv64 xv6 ?) https://github.com/mit-pdos/xv6-riscv  
