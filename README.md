@@ -833,15 +833,15 @@ xv6 的地址空间结构有一个缺点，即无法使用超过 2GB 的物理 R
 #### 进程地址空间
 
 `entry` 中建立的页表已经产生了足够多的映射来让内核的 C 代码正常运行。但是 `main` 还是调用了 `kvmalloc`（1757） 立即转换到新的页表中，  
-L1757,   
-L1857,   
+L1757, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/vm.c#L149  
+L1857, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/vm.c#L148  
 这是因为内核建立的页表更加精巧地映射了内存空间。
 
 ![figure2-2](./pic/f2-2.png)
 
 每个进程都有自己的页表，xv6 会在进程切换时通知分页硬件切换页表。如图表 2-2 所示，进程的用户内存从 0 开始，最多能够增长到 `KERNBASE`, 这使得一个进程最多只能使用 2GB 的内存。当进程向 xv6 要求更多的内存时，xv6 首先要找到空闲的物理页，  
-L????,  
-L0200,  
+L????, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/memlayout.h   
+L0200, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/memlayout.h  
 然后把这些页对应的 PTE 加入该进程的页表中，并让 PTE 指向对应的物理页。xv6 设置了 PTE 中的 `PTE_U` 、`PTE_W`、`PTE_P` 标志位。大多数进程是用不完整个内存空间的；xv6 会把没有被使用的 PTE 的 `PTE_P` 标志位设为0。不同进程的页表将其用户内存映射到不同的物理内存中，因此每个进程就拥有了私有的用户内存。
 
 xv6 在每个进程的页表中都包含了内核运行所需要的所有映射，而这些映射都出现在 `KERNBASE` 之上。它将虚拟地址 `KERNBASE:KERNBASE+PHYSTOP` 映射到 `0:PHYSTOP`。这样映射的原因之一是内核可以使用自己的指令和数据；原因之二是内核有时需要对物理页进行写操作，譬如在创建页表页的时候，而使得每一个物理页都在对应的虚拟地址上被映射就让这些操作变得很方便。这样的安排有一个缺点，即 xv6 无法使用超过 2GB 的物理内存。有一些使用内存映射的 I/O 设备的物理内存在 0xFE000000 之上，对于这些设备 xv6 页表采用了直接映射。`KERNBASE` 之上的页对应的 PTE 中，`PTE_U` 位均被置 0，因而只有内核能够使用这些页。
@@ -853,32 +853,32 @@ xv6 在每个进程的页表中都包含了内核运行所需要的所有映射�
 #### 代码：建立一个地址空间
 
 `main` 调用 `kvmalloc`（1757），  
-L1757,  
-L1857,  
+L1757, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/vm.c#L149   
+L1857, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/vm.c#L148  
 创建并切换到一个拥有内核运行所需的 `KERNBASE` 以上映射的页表。这里的大多数工作都是由 `setupkvm`（1737）完成的。   
-L1737,   
-L1837,  
+L1737, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/vm.c#L129  
+L1837, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/vm.c#L128  
 首先，它会分配一页内存来放置页目录，然后调用 `mappages` 来建立内核需要的映射，这些映射可以在 `kmap`（1728）数组中找到。  
-L1728,  
-L1828,  
+L1728, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/vm.c#L120  
+L1828, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/vm.c#L119  
 这里的映射包括内核的指令和数据，`PHYSTOP` 以下的物理内存，以及 I/O 设备所占的内存。`setupkvm` 不会建立任何用户内存的映射，这些映射稍后会建立。
 
 `mappages`（1679）做的工作是在页表中建立一段虚拟内存到一段物理内存的映射。   
-L1679,   
-L1779,  
+L1679, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/vm.c#L71  
+L1779, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/vm.c#L70  
 它是在页的级别，即一页一页地建立映射的。对于每一个待映射虚拟地址，`mappages` 调用 `walkpgdir` 来找到该地址对应的 PTE 地址。然后初始化该 PTE 以保存对应物理页号、许可级别（`PTE_W` 和/或 `PTE_U`）以及 `PTE_P` 位来标记该 PTE 是否是有效的（1691）。
-L1691,   
-L1791,   
+L1691, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/vm.c#L83  
+L1791, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/vm.c#L82  
 
 `walkpgdir`（1654）模仿 x86 的分页硬件为一个虚拟地址寻找 PTE 的过程（见图表2-1）。   
-L1654,   
-L1754,   
+L1654, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/vm.c#L46  
+L1754, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/vm.c#L45  
 `walkpgdir` 通过虚拟地址的前 10 位来找到在页目录中的对应条目（1659），  
-L1659,   
-L1759,  
+L1659, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/vm.c#L51    
+L1759, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/vm.c#L50  
 如果该条目不存在，说明要找的页表页尚未分配；如果 `alloc` 参数被设置了，`walkpgdir` 会分配页表页并将其物理地址放到页目录中。最后用虚拟地址的接下来 10 位来找到其在页表中的 PTE 地址（1672）。    
-L1672,  
-L1772,  
+L1672, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/vm.c#L64  
+L1772, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/vm.c#L63  
 
 #### 物理内存的分配
 
@@ -910,7 +910,7 @@ L2815,
 L3065,   
 这使得访问已被释放内存的代码所读到的不是原有数据，而是垃圾数据；这样做能让这种错误的代码尽早崩溃。接下来 `kfree` 把 `v` 转换为一个指向结构体 `struct run` 的指针，在 `r->next` 中保存原有空闲链表的表头，然后将当前的空闲链表设置为 `r`。`kalloc` 移除并返回空闲链表的表头。
 
-#### 地址空间中的用户部分
+ 地址空间中的用户部分
 
 ![figure2-3](./pic/f2-3.png)
 
@@ -1412,7 +1412,7 @@ xv6 非常谨慎地使用锁来避免竞争条件。一个简单的例子就是 
 
 最后，对于锁的粒度选择是并行编程中的一个重要问题。xv6 只使用了几个简单的锁；例如，xv6 中使用了一个单独的锁来保护进程表及其不变量，我们将在第5章讨论这个问题。更精细的做法是给进程表中的每一个条目都上一个锁，这样在不同条目上运行的线程也能并行了。然而，当一个操作需要维持关于整个进程表的不变量时，这样的做法会让情况变得很复杂，因为此时它可能需要持有多个锁。但愿 xv6 中的例子已经足够让我们了解如何使用锁了。
 
-####锁的顺序
+#### 锁的顺序
 
 如果一段代码要使用多个锁，那么必须要注意代码每次运行都要以相同的顺序获得锁，否则就有死锁的危险。假设某段代码的两条执行路径都需要锁 A 和 B，但路径1获得锁的顺序是 A、B，而路径2获得锁的顺序是 B、A。这样就有能路径1获得了锁 A，而在它继续获得锁 B 之前，路径2获得了锁 B，这样就死锁了。这时两个路径都无法继续执行下去了，因为这时路径1需要锁 B，但锁 B已经在路径2手中了，反之路径2也得不到锁 A。为了避免这种死锁，所有的代码路径获得锁的顺序必须相同。避免死锁也是我们把锁作为函数使用规范的一部分的原因：调用者必须以固定顺序调用函数，这样函数才能以相同顺序获得锁。
 
@@ -1472,7 +1472,7 @@ xv6 中`多路复用`的实现如下：当一个进程等待磁盘请求时，xv
 
 xv6 必须为进程提供互相协作的方法。譬如，父进程需要等待子进程结束，以及读取管道数据的进程需要等待其他进程向管道中写入数据。与其让这些等待中的进程消耗 CPU 资源，不如让它们暂时放弃 CPU，进入睡眠状态来等待其他进程发出事件来唤醒它们。但我们必须要小心设计以防睡眠进程遗漏事件通知。本章我们将用管道机制的具体实现来解释上述问题及其解决方法。
 
-####代码：上下文切换
+#### 代码：上下文切换
 
 如图表5-1所示，xv6 在低层次中实现了两种上下文切换：从进程的内核线程切换到当前 CPU 的调度器线程，从调度器线程到进程的内核线程。xv6 永远不会直接从用户态进程切换到另一个用户态进程；这种切换是通过用户态-内核态切换（系统调用或中断）、切换到调度器、切换到新进程的内核线程、最后这个陷入返回实现的。本节我们将以内核线程与调度器线程的切换作为例子来说明。
 
