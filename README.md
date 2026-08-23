@@ -154,6 +154,7 @@ https://github.com/weimingtom/wmt_ai_study/blob/master/os_001.md
 * unix v6, UnixV6  
 * SimH
 * mini-riscv-os, EN帶你寫個作業系統：來趟RISC-V開發輕旅行  
+https://github.com/cccriscv/mini-riscv-os  
 https://github.com/weimingtom/wmt_ai_study/blob/master/fpga_cpld_001.md  
 
 ## risc-v xv6
