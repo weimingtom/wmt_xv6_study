@@ -155,8 +155,9 @@ https://github.com/weimingtom/wmt_ai_study/blob/master/os_001.md
 * SimH
 
 ## risc-v xv6
+* (rv64 xv6 ?) https://github.com/mit-pdos/xv6-riscv  
 * https://github.com/weimingtom/wmt_riscv_study/blob/master/README.md  
-* lisp.c
+* (rv32 xv6 ?) lisp.c  
 https://github.com/x653/xv6-riscv-fpga/blob/main/xv6-riscv/user/lisp.c  
 https://github.com/x653/xv6-riscv-fpga/blob/main/lisp/lisp.c  
 
