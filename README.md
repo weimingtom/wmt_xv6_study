@@ -912,23 +912,23 @@ xv6 使用从内核结尾到 `PHYSTOP` 之间的物理内存为运行时分配�
 #### 代码：物理内存分配器
 
 分配器中的数据结构是一个由可分配物理内存页构成的*空闲链表*。这个空闲页的链表的元素是结构体 `struct run`（2764）。  
-L2764,  
-L3014,  
+L2764, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/kalloc.c#L15  
+L3014, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/kalloc.c#L15   
 那么分配器从哪里获得内存来存放这些数据结构呢？实际上，分配器将每个空闲页的 `run` 结构体保存在该空闲页本身中，因为空闲页中没有其他数据。分配器还用一个 spin lock（2764-2766）来保护空闲链表。   
-L2764-2766,   
-L3018-3022,  
+L2764-2766, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/kalloc.c#L19-L23  
+L3018-3022, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/kalloc.c#L19-L23  
 链表和这个锁都封装在一个结构体中，这样逻辑就比较明晰：锁保护了该结构体中的域。不过现在让我们先忽略这个锁，以及对 `acquire` 和 `release` 的调用；我们会在第 4 章了解其细节。
 
 `main` 函数调用了 `kinit1` 和 `kinit2` 两个函数对分配器进行初始化（2780）。  
-L2780,  
-L3030,  
+L2780, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/kalloc.c#L31  
+L3030, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/kalloc.c#L31  
 这样做是由于 `main` 中的大部分代码都不能使用锁以及 4MB 以上的内存。`kinit1` 在前 4MB 进行了不需要锁的内存分配。而 `kinit2` 允许了锁的使用，并使得更多的内存可用于分配。原本应该由 `main` 决定有多少物理内存可用于分配，但在 x86 上很难实现。所以它假设机器中有 240MB（`PHYSTOP`）物理内存，并将内核末尾和 `PHYSTOP` 之间的内存都作为一个初始的空闲内存池。`kinit1` 和 `kinit2` 调用 `freerange` 将内存加入空闲链表中，`freerange` 则是通过对每一页调用 `kfree` 实现该功能。一个 PTE 只能指向一个 4096 字节对齐的物理地址（即是 4096 的倍数），因此 `freerange` 用 `PGROUNDUP` 来保证分配器只会释放对齐的物理地址。分配器原本一开始没有内存可用，正是对 `kfree` 的调用将可用内存交给了分配器来管理。
 
 分配器用映射到高内存区域的虚拟地址找到对应的物理页，而非物理地址。所以 `kinit` 会使用 `p2v(PHYSTOP)`来将 `PHYSTOP`（一个物理地址）翻译为虚拟地址。分配器有时将地址看作是整型，这是为了对其进行运算（譬如在 `kinit` 中遍历所有页）；而有时将地址看作读写内存用的指针（譬如操作每个页中的 `run` 结构体）；对地址的双重使用导致分配器代码中充满了类型转换。另外一个原因是，释放和分配内存隐性地改变了内存的类型。
 
 函数 `kfree`（2815）首先将被释放内存的每一字节设为 1。  
-L2815,  
-L3065,   
+L2815, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/kalloc.c#L60     
+L3065, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/kalloc.c#L60  
 这使得访问已被释放内存的代码所读到的不是原有数据，而是垃圾数据；这样做能让这种错误的代码尽早崩溃。接下来 `kfree` 把 `v` 转换为一个指向结构体 `struct run` 的指针，在 `r->next` 中保存原有空闲链表的表头，然后将当前的空闲链表设置为 `r`。`kalloc` 移除并返回空闲链表的表头。
 
  地址空间中的用户部分
@@ -940,36 +940,36 @@ L3065,
 #### 代码：`exec`
 
 `exec` 是创建地址空间中用户部分的系统调用。它根据文件系统中保存的某个文件来初始化用户部分。`exec`（5910）    
-L5910,   
-L6310,  
+L5910, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/exec.c#L11  
+L6310, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/exec.c#L11  
 通过 `namei`（5920）打开二进制文件，  
-L5920,  
-L6321,  
+L5920, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/exec.c#L21  
+L6321, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/exec.c#L22  
 这一点将在第 6 章进行解释。然后，它读取 ELF 头。xv6 应用程序以通行的 ELF 格式来描述，该格式在 `elf.h` 中定义。一个 ELF 二进制文件包括了一个 ELF 头，即结构体 `struct elfhdr`（0955），  
-L0955,  
-L1005,  
+L0955, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/elf.h#L6  
+L1005, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/elf.h#L6  
 然后是连续几个程序段的头，即结构体 `struct proghdr`（0974）。   
-L0974,  
-L1024,  
+L0974, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/elf.h#L25  
+L1024, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/elf.h#L25  
 每个 `proghdr` 都描述了需要载入到内存中的程序段。xv6 中的程序只有一个程序段的头，但其他操作系统中可能有多个。
 
 `exec` 第一步是检查文件是否包含 ELF 二进制代码。一个 ELF 二进制文件是以4个“魔法数字”开头的，即 0x7F，“E”，“L”，“F”，或者写为宏 `ELF_MAGIC`（0952）。  
-L0952,  
-L1002,  
+L0952, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/elf.h#L3  
+L1002, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/elf.h#L3  
 如果 ELF 头中包含正确的魔法数字，`exec` 就会认为该二进制文件的结构是正确的。
 
 `exec` 通过 `setupkvm`（5931）分配了一个没有用户部分映射的页表，    
-L5931,  
-L6334,  
+L5931, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/exec.c#L32  
+L6334, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/exec.c#L35  
 再通过 `allocuvm`（5943）为每个 ELF 段分配内存，   
-L5943,  
-L6348,  
+L5943, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/exec.c#L44  
+L6348, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/exec.c#L49  
 然后通过 `loaduvm`（5945）把段的内容载入内存中。  
-L5945,  
-L6352,  
+L5945, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/exec.c#L46  
+L6352, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/exec.c#L53  
 `allocuvm` 会检查请求分配的虚拟地址是否是在 `KERNBASE` 之下。 `loaduvm`（1818） 通过 `walkpgdir` 来找到写入 ELF 段的内存的物理地址；  
-L1818,   
-L1918,   
+L1818, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/vm.c#L197    
+L1918, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/vm.c#L199
 通过 `readi` 来将段的内容从文件中读出。
 
 `exec` 创建的第一个用户程序 `/init` 程序段的头是这样的：
@@ -989,16 +989,16 @@ Program Header:
 现在 `exec` 要分配以及初始化用户栈了。它只为栈分配一页内存。`exec` 一次性把参数字符串拷贝到栈顶，然后把指向它们的指针保存在 `ustack` 中。它还会在 `main` 参数列表 `argv` 的最后放一个空指针。这样，`ustack` 中的前三项就是伪造的返回 PC，`argc` 和 `argv` 指针了。
 
 `exec` 会在栈的页下方放一个无法访问的页，这样当程序尝试使用超过一个页的栈时就会出错。另外，这个无法访问的页也让 `exec` 能够处理那些过于庞大的参数；当参数过于庞大时，`exec` 用于将参数拷贝到栈上的函数 `copyout` 会发现目标页无法访问，  
-L????,  
-L2118,  
+L????, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/vm.c#L357  
+L2118, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/vm.c#L365  
 并且返回 -1。
 
 在创建新的内存映像时，如果 `exec` 发现了错误，比如一个无效的程序段，它就会跳转到标记 `bad` 处，释放这段内存映像，然后返回 -1。`exec` 必须在确认该调用可以成功后才能释放原来的内存映像，否则，若原来的内存映像被释放，`exec` 甚至都无法向它返回 -1 了。`exec` 中的错误只可能发生在新建内存映像时。一旦新的内存映像建立完成，`exec` 就能装载新映像（5989）  
-L5989,   
-L6398,     
+L5989, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/exec.c#L91  
+L6398, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/exec.c#L99  
 而把旧映像释放（5990）。    
-L5990,   
-L6399,    
+L5990, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/exec.c#L92  
+L6399, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/exec.c#L100  
 最后，`exec` 成功地返回 0。
 
 #### 现实情况
@@ -1006,8 +1006,8 @@ L6399,
 和大多数操作系统一样，xv6 使用分页硬件来保护和映射内存。但是很多操作系统的实现更加精巧；例如，xv6 不能向磁盘中请求页，没有实现 copy-on-write 的 fork 操作、共享内存和惰性分配页（lazily-allocated page），也不能自动扩展栈。x86 支持段式内存转换（见附录 B），但xv6仅用它来实现 `proc` 这种有固定地址，但在不同 CPU 上有不同值的 per-CPU 变量（见 `seginit`）。对于不支持段式内存的体系结构而言，想要实现这种 per-CPU（或 per-thread）的变量，就必须要额外用一个寄存器来保存指向 per-CPU 数据区的指针。由于 x86 的寄存器实在太少，所以花费额外代价用段式内存来实现 per-CPU 变量是值得的。
 
 在内存较多的机器上使用 x86 的 4MB 大小的“超级页”还是很划算的，能够减少页表的工作负担。而内存较小时，就比较适合用比较小的页，使得分配和向磁盘换出页时都拥有较细的粒度。譬如，当一个程序只需 8KB 的内存时，分配 4MB 的页就太浪费了。xv6 只在初始页表（1311）中使用了“超级页”。  
-L1311,  
-L1412,   
+L1311, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/main.c#L107  
+L1412, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/main.c#L106  
 数组的初始化设置了 1024 条 PDE 中的 2 条，即 0 号和 512 号（`KERBASE >> PDXSHIFT`），而其他的 PDE 均为 0。xv6 设置了这两条 PDE 中的 `PTE_PS` 位，标记它们为“超级页”。内核还通过设置 `%cr4` 中的 `CP_PSE（Page Size Extension）` 位来通知分页硬件允许使用超级页。
 
 xv6 本来应该确定实际 RAM 的配置，而不是假设有 240MB 内存。在 x86 上，至少有三个通用算法：第一种是探测物理地址空间，寻找像内存一样能够维持被写入数据的区域；第二种是从 PC 非易失性 RAM 中某个已知的 16-bit 位置处读取内存大小；第三种是在 BIOS 中查看作为多处理器表一部分的内存布局表。读取内存布局表是一项比较复杂的工作。
