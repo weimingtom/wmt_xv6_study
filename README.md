@@ -1075,8 +1075,8 @@ int 指令是一个非常复杂的指令，可能有人会问是不是所有的�
 L7713, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/initcode.S#L14  
 L8414, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/initcode.S#L15  
 这个进程将 `exec` 所需的参数压栈，然后把系统调用号存在 %eax 中。这个系统调用号和 syscalls 数组中的条目匹配，（syscall 是一个函数指针的数组）（3350）。  
-L3350,   
-L3600,  
+L3350, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/syscall.c#L102  
+L3600, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/syscall.c#L102  
 我们需要设法使得 int 指令将处理器的状态从用户模式切换到内核模式，调用适当的内核函数（例如在这里是 `sys_exec`），并且使内核可以取出 `sys_exec` 的参数。接下来的几个小节将描述 xv6 是如何做到这一点的，你会发现我们可以用同样的代码来实现中断和异常。
 
 ### 代码：汇编陷入处理程序
@@ -1084,8 +1084,8 @@ L3600,
 xv6 必须设置硬件在遇到 int 指令时进行一些特殊的操作，这些操作会使处理器产生一个中断。x86 允许 256 个不同的中断。中断 0-31 被定义为软件异常，比如除 0 错误和访问非法的内存页。xv6 将中断号 32-63 映射给硬件中断，并且用 64 作为系统调用的中断号。
 
 `Tvinit` (3067) 在 `main` 中被调用，  
-L3067,   
-L3317,  
+L3067, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/trap.c#L18   
+L3317, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/trap.c#L18  
 它设置了 `idt` 表中的 256 个表项。中断 i 被位于 `vectors[i]` 的代码处理。每一个中断处理程序的入口点都是不同的，因为 x86 并未把中断号传递给中断处理程序，使用 `256` 个不同的处理程序是区分这 256 种情况的唯一办法。
 
 `Tvinit` 处理 `T_SYSCALL`，用户系统会调用 trap，特别地：它通过传递第二个参数值为 1 来指定这是一个陷阱门。陷阱门不会清除 FL 位，这使得在处理系统调用的时候也接受其他中断。
@@ -1093,25 +1093,25 @@ L3317,
 同时也设置系统调用门的权限为 DPL_USER，这使得用户程序可以通过 int 指令产生一个内陷。xv6 不允许进程用 int 来产生其他中断（比如设备中断）；如果它们这么做了，就会抛出通用保护异常，也就是发出 13 号中断。
 
 当特权级从用户模式向内核模式转换时，内核不能使用用户的栈，因为它可能不是有效的。用户进程可能是恶意的或者包含了一些错误，使得用户的 %esp 指向一个不是用户内存的地方。xv6 会使得在内陷发生的时候进行一个栈切换，栈切换的方法是让硬件从一个任务段描述符中读出新的栈选择符和一个新的 %esp 的值。函数 `switchuvm`（1773）把用户进程的内核栈顶地址存入任务段描述符中。  
-L1773,   
-L1873,  
+L1773, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/vm.c#L165  
+L1873, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/vm.c#L164  
 
 当内陷发生时，处理器会做下面一些事。如果处理器在用户模式下运行，它会从任务段描述符中加载 %esp 和 %ss，把老的 %ss 和 %esp 压入新的栈中。如果处理器在内核模式下运行，上面的事件就不会发生。处理器接下来会把 %eflags，%cs，%eip 压栈。对于某些内陷来说，处理器会压入一个错误字。而后，处理器从相应 IDT 表项中加载新的 %eip 和 %cs。
 
 xv6 使用一个 perl 脚本（2950）来产生 IDT 表项指向的中断处理函数入口点。  
-L2950,   
-L3200,  
+L2950, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/vectors.pl  
+L3200, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/vectors.pl  
 每一个入口都会压入一个错误码（如果 CPU 没有压入的话），压入中断号，然后跳转到 `alltraps`。
 
 `Alltraps`（3004）继续保存处理器的寄存器：  
-L3004,  
-L3254,  
+L3004, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/trapasm.S#L5  
+L3254, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/trapasm.S#L5  
 它压入 %ds, %es, %fs, %gs, 以及通用寄存器（3005-3010)。   
-L3005-3010,  
-L3255-3260,    
+L3005-3010, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/trapasm.S#L6-L11  
+L3255-3260, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/trapasm.S#L6-L11  
 这么做使得内核栈上压入一个 `trapframe`（中断帧） 结构体，
-L????,  
-L0602,  
+L????, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/x86.h#L150  
+L0602, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/x86.h#L150  
 这个结构体包含了中断发生时处理器的寄存器状态（参见图3-2）。处理器负责压入 %ss，%esp，%eflags，%cs 和 %eip。处理器或者中断入口会压入一个错误码，而`alltraps`负责压入剩余的。中断帧包含了所有处理器从当前进程的内核态恢复到用户态需要的信息，所以处理器可以恰如中断开始时那样继续执行。回顾一下第一章，`userinit`通过手动建立中断帧来达到这个目标（参见图1-3）。
 
 ![figure3-2](./pic/f3-2.png)
@@ -1119,21 +1119,21 @@ L0602,
 考虑第一个系统调用，被保存的 %eip 是 int 指令下一条指令的地址。%cs 是用户代码段选择符。%eflags 是执行 int 指令时的 eflags 寄存器，`alltraps` 同时也保存 %eax，它存有系统调用号，内核在之后会使用到它。
 
 现在用户态的寄存器都保存了，`alltraps` 可以完成对处理器的设置并开始执行内核的 C 代码。处理器在进入中断处理程序之前设置选择符 %cs 和 %ss；`alltraps` 设置 %ds 和 %es（3013-3015）。  
-L3013-3015,    
-L3263-3265,   
+L3013-3015, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/trapasm.S#L14-L16    
+L3263-3265, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/trapasm.S#L14-L16  
 它设置 %fs 和 %gs 来指向 `SEG_KCPU`（每个 CPU 数据段选择符）（3016-3018）。  
-L3016-3018,  
-L3266-3268,  
+L3016-3018, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/trapasm.S#L17-L19  
+L3266-3268, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/trapasm.S#L17-L19
 
 一旦段设置好了，`alltraps` 就可以调用 C 中断处理程序 `trap` 了。它压入 %esp 作为 `trap` 的参数，%esp 指向刚在栈上建立好的中断帧（3021）。  
-L3021,  
-L3271,   
+L3021, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/trapasm.S#L22  
+L3271, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/trapasm.S#L22  
 然后它调用 `trap`（3022）。  
-L3022,  
-L3272,  
+L3022, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/trapasm.S#L23  
+L3272, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/trapasm.S#L23  
 trap 返回后，`alltraps` 弹出栈上的参数（3023）然后执行标号为 `trapret` 处的代码。  
-L3023,   
-L3273,  
+L3023, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/trapasm.S#L24  
+L3273, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/trapasm.S#L24  
 我们在第一章阐述第一个用户进程的时候跟踪分析了这段代码，在那里第一个用户进程通过执行 `trapret` 处的代码来退出到用户空间。同样地事情在这里也发生：弹出中断帧会恢复用户模式下的寄存器，然后执行 iret 会跳回到用户空间。
 
 现在我们讨论的是发生在用户模式下的中断，但是中断也可能发生在内核模式下。在那种情况下硬件不需要进行栈转换，也不需要保存栈指针或栈的段选择符；除此之外的别的步骤都和发生在用户模式下的中断一样，执行的 xv6 中断处理程序的代码也是一样的。而 `iret` 会恢复了一个内核模式下的 %cs，处理器也会继续在内核模式下执行。
