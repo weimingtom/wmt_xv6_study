@@ -1109,7 +1109,7 @@ L3254, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/trapasm.S#L5
 它压入 %ds, %es, %fs, %gs, 以及通用寄存器（3005-3010)。   
 L3005-3010, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/trapasm.S#L6-L11  
 L3255-3260, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/trapasm.S#L6-L11  
-这么做使得内核栈上压入一个 `trapframe`（中断帧） 结构体，
+这么做使得内核栈上压入一个 `trapframe`（中断帧） 结构体，  
 L????, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/x86.h#L150  
 L0602, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/x86.h#L150  
 这个结构体包含了中断发生时处理器的寄存器状态（参见图3-2）。处理器负责压入 %ss，%esp，%eflags，%cs 和 %eip。处理器或者中断入口会压入一个错误码，而`alltraps`负责压入剩余的。中断帧包含了所有处理器从当前进程的内核态恢复到用户态需要的信息，所以处理器可以恰如中断开始时那样继续执行。回顾一下第一章，`userinit`通过手动建立中断帧来达到这个目标（参见图1-3）。
