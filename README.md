@@ -1141,8 +1141,8 @@ L3273, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/trapasm.S#L24
 ### 代码：C 中断处理程序
 
 我们在上一节中看到每一个处理程序会建立一个中断帧然后调用 C 函数 `trap`。`trap`（3101）查看硬件中断号 `tf->trapno` 来判断自己为什么被调用以及应该做些什么。  
-L3101,  
-L3351,    
+L3101, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/trap.c#L37  
+L3351, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/trap.c#L37    
 如果中断是 `T_SYSCALL`，`trap` 调用系统调用处理程序 `syscall`。我们会在第五章再来讨论这里的两个 `cp->killed` 检查。
 
 当检查完是否是系统调用，`trap` 会继续检查是否是硬件中断（我们会在下面讨论）。中断可能来自硬件设备的正常中断，也可能来自异常的、未预料到的硬件中断。
@@ -1154,16 +1154,16 @@ L3351,
 ### 代码：系统调用
 
 对于系统调用，`trap` 调用 `syscall`（3375）。  
-L3375,  
-L3625,  
+L3375, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/syscall.c#L127   
+L3625, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/syscall.c#L127  
 `syscall` 从中断帧中读出系统调用号，中断帧也包括被保存的 %eax，以及到系统调用函数表的索引。对第一个系统调用而言，%eax 保存的是 SYS_exec（3207），  
-L3207,   
-L3457,  
+L3207, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/syscall.h#L8  
+L3457, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/syscall.h#L8  
 并且 `syscall` 会调用第 `SYS_exec` 个系统调用函数表的表项，相应地也就调用了 `sys_exec`。
 
 `syscall` 在 %eax 保存系统调用函数的返回值。当 `trap` 返回用户空间时，它会从 `cp->tf` 中加载其值到寄存器中。因此，当 `exec` 返回时，它会返回系统调用处理函数返回的返回值（3381）。  
-L3381,   
-L3631,  
+L3381, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/syscall.c#L133  
+L3631, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/syscall.c#L133  
 系统调用按照惯例会在发生错误的时候返回一个小于 0 的数，成功执行时返回正数。如果系统调用号是非法的，syscall 会打印错误并且返回 -1。
 
 之后的章节会讲解系统调用的实现。这一章关心的是系统调用的机制。还有一点点的机制没有说到：如何获得系统调用的参数。工具函数 `argint`、`argptr` 和 `argstr` 获得第 n 个系统调用参数，他们分别用于获取整数，指针和字符串起始地址。argint 利用用户空间的 %esp 寄存器定位第 n 个参数：%esp 指向系统调用结束后的返回地址。参数就恰好在 %esp 之上（%esp+4）。因此第 n 个参数就在 %esp+4+4*n。
@@ -1173,8 +1173,11 @@ L3631,
 `argptr` 和 `argint` 的目标是相似的：它解析第 n 个系统调用参数。`argptr` 调用 `argint` 来把第 n 个参数当做是整数来获取，然后把这个整数看做指针，检查它的确指向的是用户地址空间。注意 `argptr` 的源码中有两次检查。首先，用户的栈指针在获取参数的时候被检查。然后这个获取到得参数作为用户指针又经过了一次检查。
 
 `argstr` 是最后一个用于获取系统调用参数的函数。
-L????,   
-L5819,  
+L????, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/sysfile.c#L20   
+L5819, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/sysfile.c#L20  
+```
+注：此处存疑，argfd()
+```
 它将第 n 个系统调用参数解析为指针。它确保这个指针是一个 NUL 结尾的字符串并且整个完整的字符串都在用户地址空间中。
 
 系统调用的实现（例如，sysproc.c 和 sysfile.c）仅仅是封装而已：他们用 `argint`，`argptr` 和 `argstr` 来解析参数，然后调用真正的实现。在第一章，`sys_exec` 利用这些函数来获取参数。
@@ -1192,11 +1195,11 @@ L5819,
 随着多核处理器主板的出现，需要一种新的处理中断的方式，因为每一颗 CPU 都需要一个中断控制器来处理发送给它的中断，而且也得有一个方法来分发中断。这一方式包括两个部分：第一个部分是在 I/O 系统中的（IO APIC，ioapic.c），另一部分是关联在每一个处理器上的（局部 APIC，lapic.c）。xv6 是为搭载多核处理器的主板设计的，每一个处理器都需要编程接收中断。
 
 为了在单核处理器上也能够正常运行，xv6 也为 PIC 编程（6932）。  
-L6932,  
-L7582,  
+L6932, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/picirq.c#L33  
+L7582, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/picirq.c#L33  
 每一个 PIC 可以处理最多 8 个中断（设备）并且将他们接到处理器的中断引脚上。为了支持多于八个硬件，PIC 可以进行级联，典型的主板至少有两集级联。使用 `inb` 和 `outb` 指令，xv6 配置主 PIC 产生 IRQ 0 到 7，从 PIC 产生 IRQ 8 到 16。最初 xv6 配置 PIC 屏蔽所有中断。timer.c 中的代码设置时钟 1 并且使能 PIC 上相应的中断（7574）。  
-L7574,   
-L8274,  
+L7574, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/timer.c#L25  
+L8274, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/timer.c#L25  
 这样的说法忽略了编写 PIC 的一些细节。这些 PIC（也包括 IOAPIC 和 LAPIC）的细节对本书来说并不重要，但是感兴趣的读者可以参考 xv6 源码引用的各设备的手册。
 
 在多核处理器上，xv6 必须编写 IOAPIC 和每一个处理器的 LAPIC。IO APIC 维护了一张表，处理器可以通过内存映射 I/O 写这个表的表项，而非使用 `inb` 和 `outb` 指令。在初始化的过程中，xv6 将第 0 号中断映射到 IRQ 0，以此类推，然后把它们都屏蔽掉。不同的设备自己开启自己的中断，并且同时指定哪一个处理器接受这个中断。举例来说，xv6 将键盘中断分发到处理器 0（7516）。  
@@ -1205,34 +1208,37 @@ L????,
 将磁盘中断分发到编号最大的处理器，你们将在下面看到。
 
 时钟芯片是在 LAPIC 中的，所以每一个处理器可以独立地接收时钟中断。xv6 在 `lapicinit`（6651）中设置它。  
-L6651,  
-L7201,  
+L6651, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/lapic.c#L53    
+L7201, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/lapic.c#L56  
 关键的一行代码是 `timer`（6664）中的代码，  
-L6664,   
-L7214,  
+L6664, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/lapic.c#L66  
+L7214, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/lapic.c#L69  
 这行代码告诉 LAPIC 周期性地在 IRQ_TIMER（也就是 IRQ 0) 产生中断。第 6693 行打开 CPU 的 LAPIC 的中断，   
 L6693,   
 L????,  
 这使得 LAPIC 能够将中断传递给本地处理器。
 
 处理器可以通过设置 `eflags` 寄存器中的 `IF` 位来控制自己是否想要收到中断。指令 `cli` 通过清除 `IF` 位来屏蔽中断，而 `sti` 又打开一个中断。xv6 在启动主 cpu（8412）  
-L8412,  
-L9112,  
+L8412, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/bootasm.S#L13  
+L9112, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/bootasm.S#L13  
 和其他 cpu（1126）时屏蔽中断。  
-L1126,  
-L1224,  
+L1126, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/entryother.S#L27  
+L1224, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/entryother.S#L25  
 每个处理器的调度器打开中断（2464）。   
-L2464,  
-L2714,  
+L2464, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/proc.c#L264  
+L2714, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/proc.c#L278  
 为了控制一些特殊的代码片段不被中断，xv6 在进入这些代码片段之前关中断（例如 `switchuvm`（1773））。   
-L1773,  
-L1873,   
+L1773, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/vm.c#L165  
+L1873, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/vm.c#L164  
 
-xv6 在 `idtinit`（1265）中设置时钟中断触发中断向量 32（xv6 使用它来处理 IRQ 0）。中断向量 32 和中断向量 64（用于实现系统调用）的唯一区别就是 32 是一个中断门，而 64 是一个陷阱门。中断门会清除 IF，所以被中断的处理器在处理当前中断的时候不会接受其他中断。从这儿开始直到 `trap` 为止，中断执行和系统调用或异常处理相同的代码——建立中断帧。
+xv6 在 `idtinit`（1265）中设置时钟中断触发中断向量 32（xv6 使用它来处理 IRQ 0）。
+L1265,  
+L????,  
+中断向量 32 和中断向量 64（用于实现系统调用）的唯一区别就是 32 是一个中断门，而 64 是一个陷阱门。中断门会清除 IF，所以被中断的处理器在处理当前中断的时候不会接受其他中断。从这儿开始直到 `trap` 为止，中断执行和系统调用或异常处理相同的代码——建立中断帧。
 
 当因时钟中断而调用 `trap` 时，`trap` 只完成两个任务：递增时钟变量的值（3064），  
-L3064,    
-L3367,   
+L3064, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/trap.c#L53  
+L3367, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/trap.c#L53  
 并且调用 `wakeup`。我们将在第 5 章看到后者可能会使得中断返回到一个不同的进程。
 
 ### 驱动程序
@@ -1240,8 +1246,8 @@ L3367,
 驱动程序是操作系统中用于管理某个设备的代码：它提供设备相关的中断处理程序，操纵设备完成操作，操纵设备产生中断，等等。驱动程序可能会非常难写，因为它和它管理的设备同时在并发地运行着。另外，驱动程序必须要理解设备的接口（例如，哪一个 I/O 端口是做什么的），而设备的接口又有可能非常复杂并且文档稀缺。
 
 xv6 的硬盘驱动程序给我们提供了一个良好的例子。磁盘驱动程序从磁盘上拷出和拷入数据。磁盘硬件一般将磁盘上的数据表示为一系列的 512 字节的块（亦称扇区）：扇区 0 是最初的 512 字节，扇区 1 是下一个，以此类推。为了表示磁盘扇区，操作系统也有一个数据结构与之对应。
-L????,  
-L3750,  
+L????, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/buf.h#L1  
+L3750, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/buf.h#L1  
 这个结构中存储的数据往往和磁盘上的不同步：可能还没有从磁盘中读出（磁盘正在读数据但是还没有完全读出），或者它可能已经被更新但还没有写出到磁盘。磁盘驱动程序必须保证 xv6 的其他部分不会因为不同步的问题而产生错误。
 
 ### 代码：磁盘驱动程序
