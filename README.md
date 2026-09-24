@@ -1814,11 +1814,11 @@ L4205, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/ide.c#L104
 L3915-3917, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/ide.c#L105-L107  
 L4218-4220, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/ide.c#L117-L119    
 现在缓冲区已经就绪了：`ideintr` 设置 B_VALID，清除 B_DIRTY，唤醒任何一个睡眠在这个缓冲区上的进程（3919-3922）。  
-L3919-3922,  
-L????-????,  
+L3919-3922, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/ide.c#L109-L112  
+L4222-4225, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/ide.c#L121-L124  
 最终，`ideintr` 将下一个等待中的缓冲区传递给磁盘（3924-3926）。  
-L3924-3926,  
-L????-????,    
+L3924-3926, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/ide.c#L114-L116  
+L4227-4229, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/ide.c#L126-L128       
 
 ### 实际情况
 
