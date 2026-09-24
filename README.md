@@ -1690,7 +1690,7 @@ L7574, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/timer.c#L25
 L8274, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/timer.c#L25  
 这样的说法忽略了编写 PIC 的一些细节。这些 PIC（也包括 IOAPIC 和 LAPIC）的细节对本书来说并不重要，但是感兴趣的读者可以参考 xv6 源码引用的各设备的手册。
 
-在多核处理器上，xv6 必须编写 IOAPIC 和每一个处理器的 LAPIC。IO APIC 维护了一张表，处理器可以通过内存映射 I/O 写这个表的表项，而非使用 `inb` 和 `outb` 指令。在初始化的过程中，xv6 将第 0 号中断映射到 IRQ 0，以此类推，然后把它们都屏蔽掉。不同的设备自己开启自己的中断，并且同时指定哪一个处理器接受这个中断。举例来说，xv6 将键盘中断分发到处理器 0（7516）。  
+在多核处理器上，xv6 必须编写 IOAPIC 和每一个处理器的 LAPIC。IO APIC 维护了一张表，处理器可以通过内存映射 I/O 写这个表的表项，而非使用 `inb` 和 `outb` 指令。在初始化的过程中，xv6 将第 0 号中断映射到 IRQ 0，以此类推，然后把它们都屏蔽掉。不同的设备自己开启自己的中断，并且同时指定哪一个处理器接受这个中断。举例来说，xv6 将键盘中断分发到处理器 0（7516）。    
 L7516,  
 L????,  
 将磁盘中断分发到编号最大的处理器，你们将在下面看到。
@@ -1701,7 +1701,7 @@ L7201, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/lapic.c#L56
 关键的一行代码是 `timer`（6664）中的代码，  
 L6664, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/lapic.c#L66  
 L7214, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/lapic.c#L69  
-这行代码告诉 LAPIC 周期性地在 IRQ_TIMER（也就是 IRQ 0) 产生中断。第 6693 行打开 CPU 的 LAPIC 的中断，   
+这行代码告诉 LAPIC 周期性地在 IRQ_TIMER（也就是 IRQ 0) 产生中断。第 6693 行打开 CPU 的 LAPIC 的中断，    
 L6693,   
 L????,  
 这使得 LAPIC 能够将中断传递给本地处理器。
@@ -1719,7 +1719,7 @@ L2714, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/proc.c#L278
 L1773, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/vm.c#L165  
 L1873, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/vm.c#L164  
 
-xv6 在 `idtinit`（1265）中设置时钟中断触发中断向量 32（xv6 使用它来处理 IRQ 0）。
+xv6 在 `idtinit`（1265）中设置时钟中断触发中断向量 32（xv6 使用它来处理 IRQ 0）。  
 L1265,  
 L????,  
 中断向量 32 和中断向量 64（用于实现系统调用）的唯一区别就是 32 是一个中断门，而 64 是一个陷阱门。中断门会清除 IF，所以被中断的处理器在处理当前中断的时候不会接受其他中断。从这儿开始直到 `trap` 为止，中断执行和系统调用或异常处理相同的代码——建立中断帧。
@@ -1733,7 +1733,7 @@ L3367, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/trap.c#L53
 
 驱动程序是操作系统中用于管理某个设备的代码：它提供设备相关的中断处理程序，操纵设备完成操作，操纵设备产生中断，等等。驱动程序可能会非常难写，因为它和它管理的设备同时在并发地运行着。另外，驱动程序必须要理解设备的接口（例如，哪一个 I/O 端口是做什么的），而设备的接口又有可能非常复杂并且文档稀缺。
 
-xv6 的硬盘驱动程序给我们提供了一个良好的例子。磁盘驱动程序从磁盘上拷出和拷入数据。磁盘硬件一般将磁盘上的数据表示为一系列的 512 字节的块（亦称扇区）：扇区 0 是最初的 512 字节，扇区 1 是下一个，以此类推。为了表示磁盘扇区，操作系统也有一个数据结构与之对应。
+xv6 的硬盘驱动程序给我们提供了一个良好的例子。磁盘驱动程序从磁盘上拷出和拷入数据。磁盘硬件一般将磁盘上的数据表示为一系列的 512 字节的块（亦称扇区）：扇区 0 是最初的 512 字节，扇区 1 是下一个，以此类推。为了表示磁盘扇区，操作系统也有一个数据结构与之对应。  
 L????, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/buf.h#L1  
 L3750, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/buf.h#L1  
 这个结构中存储的数据往往和磁盘上的不同步：可能还没有从磁盘中读出（磁盘正在读数据但是还没有完全读出），或者它可能已经被更新但还没有写出到磁盘。磁盘驱动程序必须保证 xv6 的其他部分不会因为不同步的问题而产生错误。
@@ -1743,34 +1743,37 @@ L3750, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/buf.h#L1
 通过 IDE 设备可以访问连接到 PC 标准 IDE 控制器上的磁盘。IDE 现在不如 SCSI 和 SATA 流行，但是它的接口比较简单使得我们可以专注于驱动程序的整体结构而不是硬件的某个特别部分的细节。
 
 磁盘驱动程序用结构体 buf（称为缓冲区）（3500）来表示一个磁盘扇区。  
-L3500,  
-L????,  
-每一个缓冲区表示磁盘设备上的一个扇区。域 `dev` 和 `sector` 给出了设备号和扇区号，域 `data` 是该磁盘扇区数据的内存中的拷贝。
+L3500, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/buf.h#L1    
+L3750, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/buf.h#L1    
+每一个缓冲区表示磁盘设备上的一个扇区。  
+L????, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/fs.h#L12  
+L3905, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/fs.h#L6  
+域 `dev` 和 `sector` 给出了设备号和扇区号，域 `data` 是该磁盘扇区数据的内存中的拷贝。
 
 域 `flags` 记录了内存和磁盘的联系：B_VALID 位代表数据已经被读入，B_DIRTY 位代表数据需要被写出。B_BUSY 位是一个锁；它代表某个进程正在使用这个缓冲区，其他进程必须等待。当一个缓冲区的 B_BUSY 位被设置，我们称这个缓冲区被锁住。
 
 内核在启动时通过调用 `main`（1234）  
-L1234,  
-L????,  
+L1234, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/main.c#L35  
+L1333, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/main.c#L34    
 中的 `ideinit`（3851）初始化磁盘驱动程序。  
-L3851,  
-L????,  
+L3851, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/ide.c#L46  
+L4151, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/ide.c#L50  
 `ideinit` 调用 `picenable` 和 `ioapicenable` 来打开 `IDE_IRQ` 中断（3856-3857）。  
-L3856-3857,  
-L????-????,  
+L3856-3857, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/ide.c#L51-L52  
+L4156-4157, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/ide.c#L55-L56    
 调用 `picenable` 打开单处理器的中断；`ioapicenable` 打开多处理器的中断，但只是打开最后一个 CPU 的中断（`ncpu-1`）：在一个双处理器系统上，CPU 1 专门处理磁盘中断。
 
 接下来，`ideinit` 检查磁盘硬件。它最初调用 `idewait`（3858）来等待磁盘接受命令。  
-L3858,  
-L????,  
+L3858, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/ide.c#L53  
+L4158, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/ide.c#L57  
 PC 主板通过 I/O 端口 0x1f7 来表示磁盘硬件的状态位。`idewait`（3833）获取状态位，    
-L3833,  
-L????,  
+L3833, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/ide.c#L34  
+L4137, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/ide.c#L38    
 直到 busy 位（IDE_BSY）被清除，以及 ready 位（IDE_DRDY)被设置。
 
 现在磁盘控制器已经就绪，`ideinit` 可以检查有多少磁盘。它假设磁盘 0 是存在的，因为启动加载器和内核都是从磁盘 0 加载的，但它必须检查磁盘 1。它通过写 I/O 端口 0x1f6 来选择磁盘 1 然后等待一段时间，获取状态位来查看磁盘是否就绪（3860-3867）。  
-L3860-3867,   
-L????-????,  
+L3860-3867, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/ide.c#L55-L62   
+L4160-4167, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/ide.c#L59-L66  
 如果不就绪，`ideinit` 认为磁盘不存在。
 
 `ideinit` 之后，就只能通过块高速缓冲（buffer cache）调用 `iderw`，`iderw` 根据标志位更新一个锁住的缓冲区。如果 B_DIRTY 被设置，iderw 将缓冲区的内容写到磁盘；如果 B_VALID 没有被设置，iderw 从磁盘中读出数据到缓冲区。
@@ -1778,35 +1781,38 @@ L????-????,
 磁盘访问耗时在毫秒级，对于处理器来说是很漫长的。引导加载器发出磁盘读命令并反复读磁盘状态位直到数据就绪。这种轮询或者忙等待的方法对于引导加载器来说是可以接受的，因为没有更好的事儿可做。但是在操作系统中，更有效的方法是让其他进程占有 CPU 并且在磁盘操作完成时接受一个中断。`iderw` 采用的就是后一种方法，维护一个等待中的磁盘请求队列，然后用中断来指明哪一个请求已经完成。虽然 `iderw` 维护了一个请求的队列，简单的 IDE 磁盘控制器每次只能处理一个操作。磁盘驱动程序的原则是：它已将队首的缓冲区送至磁盘硬件；其他的只是在等待他们被处理。
 
 `iderw`（3954）   
-L3954,  
-L????,  
-将缓冲区 `b` 送到队列的末尾（3967-3971）。
-L3967-3971,  
-L????-????,  
+L3954, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/ide.c#L126  
+L4254, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/ide.c#L138  
+将缓冲区 `b` 送到队列的末尾（3967-3971）。  
+L3967-3971, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/ide.c#L139-L143  
+L4267-4271, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/ide.c#L151-L155     
 如果这个缓冲区在队首，`iderw` 通过 `idestart` 将它送到磁盘上（3924-3926）；  
-L3924-3926,  
-L????-????,  
+L3924-3926, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/ide.c#L145-L147  
+L4227-4229, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/ide.c#L157-L159  
 在其他情况下，一个缓冲区被开始处理当且仅当它前面的缓冲区被处理完毕。
 
-`idestart` 发出关于缓冲区所在设备和扇区的读或者写操作，根据标志位的情况不同。如果操作是一个写操作，`idestart` 必须提供数据（3889）而在写出到磁盘完成后会发出一个中断。  
-L3889,    
-L????,  
+`idestart` 发出关于缓冲区所在设备和扇区的读或者写操作，  
+L????, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/ide.c#L70  
+L4175, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/ide.c#L74  
+根据标志位的情况不同。如果操作是一个写操作，`idestart` 必须提供数据（3889）而在写出到磁盘完成后会发出一个中断。  
+L3889, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/ide.c#L84  
+L4197, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/ide.c#L96    
 如果操作是一个读操作，则发出一个代表数据就绪的中断，然后中断处理程序会读出数据。注意 `iderw` 有一些关于 IDE 设备的细节，并且在几个特殊的端口进行读写。如果任何一个 `outb` 语句错误了，IDE 就会做一些我们意料之外的事。保证这些细节正确也是写设备驱动程序的一大挑战。
 
 `iderw` 已经将请求添加到了队列中，并且会在必要的时候开始处理，`iderw` 还必须等待结果。就像我们之前讨论的，轮询并不是有效的利用 CPU 的办法。相反，`iderw` 睡眠，等待中断处理程序在操作完成时更新缓冲区的标志位（3978-3979）。  
-L3978-3979,  
-L????-????,  
+L3978-3979, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/ide.c#L150-L151  
+L4278-4279, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/ide.c#L162-L163  
 当这个进程睡眠时，xv6 会调度其他进程来保持 CPU 处于工作状态。
 
 最终，磁盘会完成自己的操作并且触发一个中断。`trap` 会调用 `ideintr` 来处理它（3124）。  
-L3124,   
-L????,   
+L3124, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/trap.c#L60  
+L3374, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/trap.c#L60     
 `ideintr`（3902）查询队列中的第一个缓冲区，  
-L3902,  
-L????,  
+L3902, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/ide.c#L92  
+L4205, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/ide.c#L104  
 看正在发生什么操作。如果该缓冲区正在被读入并且磁盘控制器有数据在等待，`ideintr` 就会调用 `insl` 将数据读入缓冲区（3915-3917）。  
-L3915-3917,  
-L????-????,  
+L3915-3917, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/ide.c#L105-L107  
+L4218-4220, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/ide.c#L117-L119    
 现在缓冲区已经就绪了：`ideintr` 设置 B_VALID，清除 B_DIRTY，唤醒任何一个睡眠在这个缓冲区上的进程（3919-3922）。  
 L3919-3922,  
 L????-????,  
