@@ -1855,11 +1855,11 @@ xv6 运行在多处理器上，即计算机上有多个单独执行代码的 CPU
 #### 竞争条件
 
 下面举一个例子说明为什么我们需要锁，考虑几个共享磁盘的处理器，例如 xv6 中的 IDE 磁盘。磁盘驱动会维护一个未完成磁盘请求的链表（3821），  
-L3821,  
-L4254,  
+L3821, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/ide.c#L126  
+L4254???, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/ide.c#L138  
 这样处理器可能会并发地向链表中加入新的请求（3954）。  
-L3954,  
-L4125,  
+L3954???, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/ide.c#L22  
+L4125???, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/ide.c#L26  
 如果没有并发请求，你可以这样实现：
 
 ~~~ C
@@ -1911,8 +1911,8 @@ L4125,
 #### 代码：锁
 
 xv6 用结构体 `struct spinlock`（1401）。  
-L1401,   
-L1501,  
+L1401, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/spinlock.h#L2  
+L1501, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/spinlock.h#L2  
 该结构体中的关键成员是 `locked` 。这是一个字，在锁可以被获得时值为0，而当锁已经被获得时值为非零。逻辑上讲，xv6 应该用下面的代码来获得锁：
 
 ~~~ C
@@ -1931,19 +1931,19 @@ L1501,
 然而这段代码在现代处理器上并不能保证互斥。有可能两个（或多个）CPU 接连执行到第25行，发现 `lk->locked` 为0，然后都执行第26、27行拿到了锁。这时，两个不同的 CPU 持有锁，违反了互斥。这段代码不仅不能帮我们避免竞争条件，它本身就存在竞争。这里的问题主要出在第25、26行是分开执行的。若要保证代码的正确，就必须让第25、26行成为一个原子操作。
 
 为了让这两行变为原子操作， xv6 采用了386硬件上的一条特殊指令 `xchg`（0569）。  
-L0569,  
-L0569,  
+L0569, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/x86.h#L121  
+L0569, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/x86.h#L121  
 在一个原子操作里，`xchg` 交换了内存中的一个字和一个寄存器的值。函数 `acquire`（1474）在循环中反复使用 `xchg`；  
-L1474,    
-L1574,  
+L1474, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/spinlock.c#L25  
+L1574, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/spinlock.c#L25  
 每一次都读取 `lk->locked` 然后设置为1（1483）。  
-L1483,  
-L1581,  
+L1483, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/spinlock.c#L34  
+L1581, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/spinlock.c#L32  
 如果锁已经被持有了，lk->locked` 就已经为1了，故 `xchg` 会返回1然后继续循环。如果 `xchg` 返回0，但是 `acquire` 已经成功获得了锁，即 `locked` 已经从0变为了1，这时循环可以停止了。一旦锁被获得了，`acquire` 会记录获得锁的 CPU 和栈信息，以便调试。当某个进程获得了锁却没有释放时，这些信息可以帮我们找到问题所在。当然这些信息也被锁保护着，只有在持有锁时才能修改。
 
 函数 `release`（1502）则做了相反的事：  
-L1502,   
-L1602,  
+L1502, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/spinlock.c#L44  
+L1602, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/spinlock.c#L47  
 清除调试信息并释放锁。
 
 #### 模块化与递归锁
@@ -1957,17 +1957,17 @@ L1602,
 #### 代码：使用锁
 
 xv6 非常谨慎地使用锁来避免竞争条件。一个简单的例子就是 IDE 驱动（3800）。  
-L3800,   
-L4100,  
+L3800, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/ide.c  
+L4100, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/ide.c  
 就像本章开篇提到的一样，`iderw`（3954）有一个磁盘请求的队列，  
-L3954,  
-L4254,  
+L3954, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/ide.c#L126  
+L4254, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/ide.c#L138  
 处理器可能会并发地向队列中加入新请求（3969）。  
-L3969,  
-L4269,  
+L3969, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/ide.c#L141  
+L4269, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/ide.c#L153  
 为了保护链表以及驱动中的其他不变量，`iderw` 会请求获得锁 `idelock`（3965）并在函数末尾释放锁。  
-L3965,  
-L4265,  
+L3965, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/ide.c#L137  
+L4265, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/ide.c#L149  
 练习1中研究了如何通过把 `acquire` 移动到队列操作之后来触发竞争条件。我们很有必要做这个练习，它会让我们了解到想要触发竞争并不容易，也就是说很难找到竞争条件。 也许xv6 的代码中就潜藏着一些竞争。
 
 使用锁的一个难点在于要决定使用多少个锁，以及每个锁保护哪些数据、不变量。不过有几个基本原则。首先，当一个 CPU 正在写一个变量，而同时另一个 CPU 可能读/写该变量时，需要用锁防止两个操作重叠。第二，当用锁保护不变量时，如果不变量涉及到多个数据结构，通常所有这些数据结构需要作为整体用单个锁保护起来，这样才能维持不变量。
@@ -1985,45 +1985,45 @@ L4265,
 #### 中断处理程序
 
 xv6 用锁来防止中断处理程序与另一个 CPU 上运行非中断代码使用同一个数据。例如，时钟中断（3114）  
-L3114,  
-L3364,  
+L3114, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/trap.c#L50  
+L3364, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/trap.c#L50  
 会增加 `ticks` 但可能有另一个 CPU 正在运行 `sys_sleep`，其中也要使用该变量（3473）。  
-L3473,  
-L3723,   
+L3473, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/sysproc.c#L67  
+L3723, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/sysproc.c#L68  
 锁 `tickslock` 就能够为该变量实现同步。
 
 即使在单个处理器上，中断也可能导致并发：在允许中断时，内核代码可能在任何时候停下来，然后执行中断处理程序。假设 `iderw` 持有 `idelock`，然后中断发生，开始运行 `ideintr`。`ideintr` 会试图获得 `idelock`，但却发现 `idelock` 已经被获得了，于是就等着它被释放。这样，`idelock` 就永远不会被释放了，只有 `iderw` 能释放它，但又只有让 `ideintr` 返回 `iderw` 才能继续运行，这样处理器、整个系统都会死锁。
 
 为了避免这种情况，当中断处理程序会使用某个锁时，处理器就不能在允许中断发生时持有锁。xv6 做得更决绝：允许中断时不能持有任何锁。它使用 `pushcli`（1555）    
-L1555,   
-L1655,  
+L1555, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/spinlock.c#L97  
+L1655, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/spinlock.c#L99  
 和 `popcli`（1566）  
-L1566,   
-L1667,  
+L1566, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/spinlock.c#L108  
+L1667, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/spinlock.c#L111  
 来屏蔽中断（`cli` 是 x86 屏蔽中断的指令）。`acquire` 在尝试获得锁之前调用了 `pushcli`（1476），  
-L1476,   
-L1576,    
-`release` 则在释放锁后调用了 `popcli`（1521）。
-L1521,  
-L1620,  
-`pushcli`（1555）  
-L1555,  
-L1655,  
-和 `popcli`（1566）  
-L1566,   
-L1667,     
+L1476, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/spinlock.c#L27  
+L1576, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/spinlock.c#L27   
+`release` 则在释放锁后调用了 `popcli`（1521）。  
+L1521, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/spinlock.c#L63  
+L1620, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/spinlock.c#L65  
+`pushcli`（1555）    
+L1555, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/spinlock.c#L97   
+L1655, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/spinlock.c#L99   
+和 `popcli`（1566）   
+L1566, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/spinlock.c#L108   
+L1667, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/spinlock.c#L111   
 不仅包装了 `cli` 和 `sti`，它们还做了计数工作，这样就需要调用两次 `popcli` 来抵消两次 `pushcli`；这样，如果代码中获得了两个锁，那么只有当两个锁都被释放后中断才会被允许。
 
-`acquire` 一定要在可能获得锁的 `xchg` 之前调用 `pushcli`（1483）。  
-L1483,    
-L1581,   
-如果两者颠倒了，就可能在几个时钟周期里，中断仍被允许，而锁也被获得了，如果此时不幸地发生了中断，系统就会死锁。类似的，`release` 也一定要在释放锁的 `xchg` 之后调用 `popcli`（1483）。  
-L1483,  
-L1581,  
+`acquire` 一定要在可能获得锁的 `xchg` 之前调用 `pushcli`（1483）。   
+L1483, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/spinlock.c#L34     
+L1581, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/spinlock.c#L32  
+如果两者颠倒了，就可能在几个时钟周期里，中断仍被允许，而锁也被获得了，如果此时不幸地发生了中断，系统就会死锁。类似的，`release` 也一定要在释放锁的 `xchg` 之后调用 `popcli`（1483）。    
+L1483???, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/spinlock.c#L34     
+L1581???, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/spinlock.c#L32  
 
-另外，中断处理程序和非中断代码对彼此的影响也让我们看到了递归锁的缺陷。如果 xv6 使用了递归锁（即如果 CPU 获得了某个锁，那么同一 CPU 上可以再次获得该锁），那么中断处理程序就可能在非中断代码正运行到临界区时运行，这样就非常混乱了。当中断处理程序运行时，它所依赖的不变量可能暂时被破坏了。例如，`ideintr`（3902）会假设未处理请求链表是完好的。  
-L3902,   
-L????,   
+另外，中断处理程序和非中断代码对彼此的影响也让我们看到了递归锁的缺陷。如果 xv6 使用了递归锁（即如果 CPU 获得了某个锁，那么同一 CPU 上可以再次获得该锁），那么中断处理程序就可能在非中断代码正运行到临界区时运行，这样就非常混乱了。当中断处理程序运行时，它所依赖的不变量可能暂时被破坏了。例如，`ideintr`（3902）会假设未处理请求链表是完好的。   
+L3902, ????, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/ide.c#L92  
+L????, ????, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/ide.c#L104      
 若 xv6 使用了递归锁，`ideintr` 就可能在 `iderw` 正在修改链表时运行，链表最终将陷入不正常的状态。
 
 #### 内存乱序
