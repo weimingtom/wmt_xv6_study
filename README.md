@@ -2022,8 +2022,8 @@ L1483???, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/spinlock.c#L34
 L1581???, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/spinlock.c#L32  
 
 另外，中断处理程序和非中断代码对彼此的影响也让我们看到了递归锁的缺陷。如果 xv6 使用了递归锁（即如果 CPU 获得了某个锁，那么同一 CPU 上可以再次获得该锁），那么中断处理程序就可能在非中断代码正运行到临界区时运行，这样就非常混乱了。当中断处理程序运行时，它所依赖的不变量可能暂时被破坏了。例如，`ideintr`（3902）会假设未处理请求链表是完好的。   
-L3902, ????, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/ide.c#L92  
-L????, ????, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/ide.c#L104      
+L3902, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/ide.c#L92  
+L4205, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/ide.c#L104      
 若 xv6 使用了递归锁，`ideintr` 就可能在 `iderw` 正在修改链表时运行，链表最终将陷入不正常的状态。
 
 #### 内存乱序
