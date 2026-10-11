@@ -1250,7 +1250,7 @@ L0602, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/x86.h#L150
 现在第一个进程的状态已经被设置好了，让我们来运行它。在 `main` 调用了 `userinit` 之后， `mpmain` 调用 `scheduler` 开始运行进程（1267）。   
 L1267, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/main.c#L62  
 L1367, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/main.c#L60   
-`scheduler`（2458）会找到一个 `p->state` 为 `RUNNABLE` 的进程 `initproc`，
+`scheduler`（2458）会找到一个 `p->state` 为 `RUNNABLE` 的进程 `initproc`，  
 L2458, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/proc.c#L258   
 L2708, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/proc.c#L272   
 然后将 per-cpu 的变量 `proc` 指向该进程，接着调用 `switchuvm` 通知硬件开始使用目标进程的页表（1768）。  
