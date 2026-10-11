@@ -2079,78 +2079,78 @@ xv6 必须为进程提供互相协作的方法。譬如，父进程需要等待�
 `swtch` 并不了解线程，它只是简单地保存和恢复寄存器集合，即*上下文*。当进程让出 CPU 时，进程的内核线程调用 `swtch` 来保存自己的上下文然后返回到调度器的上下文中。每个上下文都是以结构体 `struct context*` 表示的，这实际上是一个保存在内核栈中的指针。`swtch` 有两个参数：`struct context **old`、`struct context *new`。它将当前 CPU 的寄存器压入栈中并将栈指针保存在 `*old` 中。然后 `swtch` 将 `new` 拷贝到 `%esp` 中，弹出之前保存的寄存器，然后返回。
 
 接下来我们先不考察调度器调用 `swtch` 的过程，我们先回到用户进程中看看。在第3章中我们知道，有可能在中断的最后，`trap` 会调用 `yield`。`yield` 又调用 `sched`，其中 `sched` 会调用 `swtch` 来保存当前上下文到 `proc->context` 中然后切换到之前保存的调度器上下文 `cpu->scheduler`（2516）。    
-L2516,   
-L2771,   
+L2516, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/proc.c#L306  
+L2771, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/proc.c#L325  
 
 `swtch`（2702）一开始从栈中弹出参数，  
-L2702,  
-L2952,  
+L2702, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/swtch.S#L3  
+L2952, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/swtch.S#L3  
 放入寄存器 `%eax` 和 `%edx`（2709-2710）中；   
-L2709-2710,  
-L2959-2960,  
+L2709-2710, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/swtch.S#L10-L11  
+L2959-2960, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/swtch.S#L10-L11  
 `swtch` 必须在改变栈指针以及无法获得 `%esp` 前完成这些事情。然后 `swtch` 压入寄存器，在当前栈上建立一个新的上下文结构。仅有被调用者保存的寄存器此时需要被保存；按照 x86 的惯例即 `%ebp %ebx %esi %edi %esp`。`swtch` 显式地压入前四个寄存器（2713-2716）；  
-L2713-2716,  
-L2963-2966,  
+L2713-2716, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/swtch.S#L14-L17  
+L2963-2966, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/swtch.S#L14-L17  
 最后一个则是在 `struct context*` 被写入 `old`（2719）时隐式地保存的。    
-L2719,  
-L2969,  
+L2719, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/swtch.S#L20  
+L2969, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/swtch.S#L20  
 要注意，还有一个重要的寄存器，即程序计数器 `%eip`，该寄存器在使用 `call` 调用 `swtch` 时就保存在栈中 `%ebp` 之上的位置上了。保存了旧寄存器后，`swtch` 就准备要恢复新的寄存器了。它将指向新上下文的指针放入栈指针中（2720）。  
-L2720,  
-L2970,  
+L2720, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/swtch.S#L21  
+L2970, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/swtch.S#L21  
 新的栈结构和旧的栈相同，因为新的上下文其实是之前某次的切换中的旧上下文。所以 `swtch` 就能颠倒一下保存旧上下文的顺序来恢复新上下文。它弹出 `%edi %esi %ebx %ebp` 然后返回（2723-2727）。  
-L2723-2727,  
-L2973-2977,  
+L2723-2727, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/swtch.S#L24-L28  
+L2973-2977, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/swtch.S#L24-L28  
 由于 `swtch` 改变了栈指针，所以这时恢复的寄存器就是新上下文中的寄存器值。
 
 在我们的例子中，`sched` 调用 `swtch` 切换到 `cpu->scheduler`，即 per-cpu 的调度器上下文。这个上下文是在之前 `scheduler` 调用 `swtch`（2478）时保存的。  
-L2478,  
-L2728,  
+L2478, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/proc.c#L278  
+L2728, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/proc.c#L292  
 当 `swtch` 返回时，它不会返回到 `sched` 中，而是返回到 `scheduler`，其栈指针指向了当前 CPU 的调度器的栈，而非 `initproc` 的内核栈。
 
 #### 代码：调度
 
 上一节中我们查看了 `swtch` 的底层细节；现在让我们将 `swtch` 看做一个既有的功能，来研究从进程到调度器然后再回到进程的切换过程中的一些约定。进程想要让出 CPU 必须要获得进程表的锁 `ptable.lock`，并释放其拥有的其他锁，修改自己的状态（`proc->state`），然后调用 `sched`。`yield`（2522）    
-L2522,  
-L2777,  
+L2522, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/proc.c#L312  
+L2777, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/proc.c#L331  
 和 `sleep exit` 都遵循了这个约定，我们稍后将会详细研究。`sched` 检查了两次状态（2507-2512），  
-L2507-2512,  
-L2762-2767,  
+L2507-2512, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/proc.c#L297-L302  
+L2762-2767, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/proc.c#L316-L321  
 这里的状态表明由于进程此时持有锁，所以 CPU 应该是在中断关闭的情况下运行的。最后，`sched` 调用 `swtch` 把当前上下文保存在 `proc->context` 中然后切换到调度器上下文即 `cpu->scheduler` 中。`swtch` 返回到调度器栈中，就像是调度器调用的 `swtch` 返回了一样（2478）。  
-L2478,   
-L2728,   
+L2478, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/proc.c#L278  
+L2728, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/proc.c#L292  
 调度器继续其 `for` 循环，找到一个进程来运行，切换到该进程，然后继续轮转。
 
 我们看到，在对 `swtch` 的调用的整个过程中，xv6 都持有锁 `ptable.lock`：`swtch` 的调用者必须持有该锁，并将锁的控制权转移给切换代码。锁的这种使用方式很少见，通常来说，持有锁的线程应该负责释放该锁，这样更容易让我们理解其正确性。但对于上下文切换来说，我们必须使用这种方式，因为 `ptable.lock` 会保证进程的 `state` 和 `context` 在运行 `swtch` 时保持不变。如果在 `swtch` 中没有持有 `ptable.lock`，可能引发这样的问题：在 `yield` 将某个进程状态设置为 `RUNNABLE` 之后，但又是在 `swtch` 让它停止在其内核栈上运行之前，有另一个 CPU 要运行该进程。其结果将是两个 CPU 都运行在同一个栈上，这显然是不该发生的。
 
 内核线程只可能在 `sched` 中让出处理器，在 `scheduler` 中切换回对应的地方，当然这里 `scheduler` 也是通过 `sched` 切换到进程中的。所以，如果要写出 xv6 中切换线程的代码行号，我们会发现其执行规律是（2478），  
-L2478,  
-L2728,  
+L2478, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/proc.c#L278   
+L2728, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/proc.c#L292    
 （2516），  
-L2516,  
-L2771,  
+L2516, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/proc.c#L306  
+L2771, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/proc.c#L325  
 （2478），  
-L2478,  
-L2728,  
+L2478, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/proc.c#L278     
+L2728, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/proc.c#L292  
 （2516），  
-L2516,  
-L2771,  
+L2516, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/proc.c#L306  
+L2771, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/proc.c#L325   
 不断循环。  
 
 以这种形式在两个线程之间切换的过程有时被称作*共行程序（coroutines）*；在此例中，`sched` 和 `scheduler` 就是彼此的共行程序。
 
 但在一种特殊情况下，调度器调用的切换到新进程的 `swtch` 不会在 `sched` 中结束。我们在第2章学到了这个例子：当一个新进程第一次被调度时，它从 `forkret`（2533）开始运行。  
-L2533,   
-L2788,  
+L2533, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/proc.c#L323  
+L2788, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/proc.c#L342  
 之所以要运行 `forkret`，只是为了按照惯例释放 `ptable.lock`；否则，这个新进程是可以就从 `trapret` 开始运行的。
 
 `scheduler`（2458）运行了一个普通的循环：  
-L2458,   
-L2708,  
+L2458, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/proc.c#L258  
+L2708, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/proc.c#L272  
 找到一个进程来运行，运行直到其停止，然后继续循环。`scheduler` 大部分时间里都持有 `ptable.lock`，但在每次外层循环中都要释放该锁（并显式地允许中断）。当 CPU 闲置（找不到 `RUNNABLE` 的进程）时这样做十分有必要。如果一个闲置的调度器一直持有锁，那么其他 CPU 就不可能执行上下文切换或任何和进程相关的系统调用了，也就更不可能将某个进程标记为 `RUNNABLE` 然后让闲置的调度器能够跳出循环了。而之所以周期性地允许中断，则是因为可能进程都在等待 I/O，从而找不到一个 `RUNNABLE` 的进程（例如 shell）；如果调度器一直不允许中断，I/O 就永远无法到达了。
 
 `scheduler` 不断循环寻找可运行，即 `p->state == RUNNABLE` 的进程。一旦它找到了这样的进程，就将 per-cpu 的当前进程变量 `proc` 设为该进程，用 `switchuvm` 切换到该进程的页表，标记该进程为 `RUNNING`，然后调用 `swtch` 切换到该进程中运行（2472-2478）。  
-L2472-2478,  
-L2722-2778,  
+L2472-2478, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/proc.c#L272-L278     
+L2722-2728, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/proc.c#L286-L292  
 
 下面我们来从另一个层面研究这段调度代码。对于每个进程，调度维护了进程的一系列固定状态，并且保证当状态变化时必须持有锁 `ptable.lock`。第一个固定状态是，如果进程为 `RUNNING` 的，那么必须确保使用时钟中断的 `yield` 时，能够无误地切换到其他进程；这就意味着 CPU 寄存器必须保存着进程的寄存器值（这些寄存器值并非在 `context` 中），`%cr3` 必须指向进程的页表，`%esp` 则要指向进程的内核栈，这样 `swtch` 才能正确地向栈中压入寄存器值，另外 `proc` 必须指向进程的 `proc[]` 槽中。另一个固定状态是，如果进程是 `RUNNABLE`，必须保证调度器能够无误地调度执行该进程；这意味着 `p->context` 必须保存着进程的内核线程变量，并且没有任何 CPU 此时正在其内核栈上运行，没有任何 CPU 的 `%cr3` 寄存器指向进程的页表，也没有任何 CPU 的 `proc` 指向该进程。
 
@@ -2292,25 +2292,25 @@ recv(struct q *q)
 #### 代码：睡眠与唤醒
 
 接下来让我们看看 xv6 中 `sleep` 
-L????,  
-L2809,  
+L????, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/proc.c#L343  
+L2809, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/proc.c#L363  
 和 `wakeup` 的实现。
-L????,  
-L2853,  
+L????, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/proc.c#L381  
+L2853, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/proc.c#L401  
 总体思路是希望 `sleep` 将当前进程转化为 `SLEEPING` 状态并调用 `sched` 以释放 CPU，而 `wakeup` 则寻找一个睡眠状态的进程并把它标记为 `RUNNABLE`。
 
 `sleep`     
-L????,  
-L2809,  
+L????, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/proc.c#L343   
+L2809, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/proc.c#L363   
 首先会进行几个必要的检查：必须存在当前进程（2555）  
-L2555,  
-L2811,  
+L2555, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/proc.c#L345  
+L2811, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/proc.c#L365  
 并且 `sleep` 必须持有锁（2558-2559）。  
-L2558-2559,  
-L2814-2815,  
+L2558-2559, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/proc.c#L348-L349  
+L2814-2815, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/proc.c#L368-L369  
 接着 `sleep` 要求持有 `ptable.lock`（2568）。   
-L2568,  
-L2824,  
+L2568, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/proc.c#L358  
+L2824, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/proc.c#L378  
 于是该进程就会同时持有锁 `ptable.lock` 和 `lk` 了。调用者（例如 `recv`）是必须持有 `lk` 的，这样可以保证其他进程（例如一个正在运行的 `send`）无法调用 `wakeup(chan)`。而如今 `sleep` 已经持有了 `ptable.lock`，那么它现在就能安全地释放 `lk` 了：这样即使别的进程调用了 `wakeup(chan)`，`wakeup` 也不可能在没有持有 `ptable.lock` 的情况下运行，所以 `wakeup` 必须等待 `sleep` 让进程睡眠后才能运行。这样一来，`wakeup` 就不会错过 `sleep` 了。
 
 这里有一个复杂一点的情况：即 `lk` 就是 `ptable.lock` 的时候，这样 `sleep` 在要求持有 `ptable.lock` 然后又把它作为 `lk` 释放的时候会出现死锁。这种情况下，`sleep` 就会直接跳过这两个步骤（2567）。   
