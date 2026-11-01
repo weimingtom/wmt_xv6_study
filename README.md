@@ -2379,51 +2379,51 @@ L6568, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/pipe.c#L117
 `sleep` 和 `wakeup` 可以在很多需要等待一个可检查状态的情况中使用。如我们在第0章中所见，父进程可以调用 `wait` 来等待一个子进程退出。在 xv6 中，当一个子进程要退出时它并不是直接死掉，而是将状态转变为 `ZOMBIE`，然后当父进程调用 `wait` 时才能发现子进程可以退出了。所以父进程要负责释放退出的子进程相关的内存空间，并修改对应的 `struct proc` 以便重用。每个进程结构体都会在 `p->parent` 中保存指向其父进程的指针。如果父进程在子进程之前退出了，初始进程 `init` 会接收其子进程并等待它们退出。我们必须这样做以保证可以为退出的进程做好子进程的清理工作。另外，所有的进程结构都是被 `ptable.lock` 保护的。
 
 `wait` 首先要求获得 `ptable.lock`，然后查看进程表中是否有子进程，如果找到了子进程，并且没有一个子进程已经退出，那么就调用 `sleep` 等待其中一个子进程退出（2439），    
-L2439,   
-L2689,   
+L2439, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/proc.c#L245  
+L2689, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/proc.c#L259  
 然后不断循环。注意，这里 `sleep` 中释放的锁是 `ptable.lock`，也就是我们之前提到过的特殊情况。
 
 `exit` 首先要求获得 `ptable.lock` 然后唤醒当前进程的父进程（2376）。  
-L2376,  
-L2628,  
+L2376, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/proc.c#L189   
+L2628, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/proc.c#L203
 这一步似乎为时过早，但由于 `exit` 这时还没有把当前进程标记为 `ZOMBIE`，所以这样并不会出错：即使父进程已经是 `RUNNABLE` 的了，但在 `exit` 调用 `sched` 以释放 `ptable.lock` 之前，`wait` 是无法运行其中的循环的。所以说只有在子进程被标记为 `ZOMBIE`(2388)之后，  
-L2388,   
-L2640,  
+L2388, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/proc.c#L201   
+L2640, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/proc.c#L215   
 `wait` 才可能找到要退出的子进程。在退出并重新调度之前，`exit` 会把所有子进程交给 `initproc`（2378-2385）。
-L2378-2385,  
-L2630-2637,   
+L2378-2385, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/proc.c#L191-L198  
+L2630-2637, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/proc.c#L205-L212  
 最后，`exit` 调用 `sched` 来让出 CPU。
 
 退出进程的父进程本来是通过调用 `wait`（2439）处于睡眠状态中，  
-L2439,   
-L????,   
+L2439, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/proc.c#L209  
+L????, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/proc.c#L223  
 不过现在它就可以被调度器调度了。对 `sleep` 的调用返回时仍持有 `ptable.lock` ；`wait` 接着会重新查看进程表并找到 `state == ZOMBIE`（2382）的已退出子进程。    
-L2382,  
-L2634,  
+L2382, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/proc.c#L195  
+L2634, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/proc.c#L209  
 它会记录该子进程的 `pid` 然后清理其 `struct proc`，释放相关的内存空间（2418-2426）。  
-L2418-2426,  
-L2668-2675,  
+L2418-2426, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/proc.c#L224-L232  
+L2668-2675, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/proc.c#L238-L246  
 
 子进程在 `exit` 时已经做好了大部分的清理工作，但父进程一定要为其释放 `p->kstack` 和 `p->pgdir`；当子进程运行 `exit` 时，它正在利用 `p->kstack` 分配到的栈以及 `p->pgdir` 对应的页表。所以这两者只能在子进程结束运行后，通过调用 `sched` 中的 `swtch` 被清理。这就是为什么调度器要运行在自己单独的栈上，而不能运行在调用 `sched` 的线程的栈上。
 
 `exit` 让一个应用程序可以自我终结；`kill`（2625）  
-L2625,  
-L2875,  
+L2625, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/proc.c#L403  
+L2875, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/proc.c#L423  
 则让一个应用程序可以终结其他进程。在实现 `kill` 时有两个困难：1）被终结的进程可能正在另一个 CPU 上运行，所以它必须在被终结之前把 CPU 让给调度器；2）被终结的进程可能正在 `sleep` 中，并持有内核资源。`kill` 很轻松地解决了这两个难题：它在进程表中设置被终结的进程的 `p->killed`，如果这个进程在睡眠中则唤醒之。如果被终结的进程正在另一个处理器上运行，它总会通过系统调用或者中断（例如时钟中断）进入内核。当它离开内核时，`trap` 会检查它的 `p->killed`，如果被设置了，该进程就会调用 `exit`，终结自己。
 
 如果被终结的进程在睡眠中，调用 `wakeup` 会让被终结的进程开始运行并从 `sleep` 中返回。此举有一些隐患，因为进程可能是在它等待的状态尚为假的时候就从 `sleep` 中返回了。所以 xv6 谨慎地在调用 `sleep` 时使用了 `while` 循环，检查 `p->killed` 是否被设置了，若是，则返回到调用者。调用者也必须再次检查 `p->killed` 是否被设置，若是，返回到再上一级调用者，依此下去。最后进程的栈展开（unwind）到了 `trap`，`trap` 若检查到 `p->killed` 被设置了，则调用 `exit` 终结自己。我们已经在管道的实现中（6087）    
-L????,    
-L6087,  
+L6087, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/pipe.c#L85  
+L????, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/pipe.c#L85  
 看到了在 `sleep` 外的 `while` 循环中检查 `p->killed`。
 
 有一处的 `while` 没有检查 `p->killed`。ide 驱动（3979）    
-L3979,   
-L4279,  
+L3979, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/ide.c#L151  
+L4279, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/ide.c#L163  
 直接重新调用了 `sleep`。之所以可以确保能被唤醒，是因为它在等待一个磁盘中断。如果它不是在等待磁盘中断的话，xv6 就搞不清楚它在做什么了。如果有第二个进程在中断之前调用了 `iderw`，`ideintr` 会唤醒该进程（第二个），而非原来等待中断的那一个（第一个）进程。第二个进程会认为它收到了它正在等待的数据，但实际上它收到的是第一个进程想要读的数据。
 
 #### 现实情况
 
-xv6 所实现的调度算法非常朴素，仅仅是让每个进程轮流执行。这种算法被称作*轮转法（round robin）*。真正的操作系统使用了更为复杂的算法，例如，让每个进程都有优先级。主要思想是优先处理高优先级的可运行进程。但是由于要权衡多项指标，例如要保证公平性和高的吞吐量，调度算法往往很快变得复杂起来。另外，复杂的调度算法还会无意中导致像*优先级倒转（priority inversion）*和*护航（convoy）*这样的现象。优先级倒转是指当高优先级进程和低优先级进程共享一个锁时，如果锁已经被低优先级进程获得了，高优先级进程就无法运行了。护航则是指当很多高优先级进程等待一个持有锁的低优先级进程的情况，护航一旦发生，则可能持续很久。如果要避免这些问题，就必须在复杂的调度器中设计更多的机制。
+xv6 所实现的调度算法非常朴素，仅仅是让每个进程轮流执行。这种算法被称作*轮转法（round robin）*。真正的操作系统使用了更为复杂的算法，例如，让每个进程都有优先级。主要思想是优先处理高优先级的可运行进程。但是由于要权衡多项指标，例如要保证公平性和高的吞吐量，调度算法往往很快变得复杂起来。另外，复杂的调度算法还会无意中导致像 *优先级倒转（priority inversion）* 和 *护航（convoy）* 这样的现象。优先级倒转是指当高优先级进程和低优先级进程共享一个锁时，如果锁已经被低优先级进程获得了，高优先级进程就无法运行了。护航则是指当很多高优先级进程等待一个持有锁的低优先级进程的情况，护航一旦发生，则可能持续很久。如果要避免这些问题，就必须在复杂的调度器中设计更多的机制。
 
 `sleep` 和 `wakeup` 是非常普通但有效的同步方法，当然还有很多其他的同步方法。同步要解决的第一个问题是本章开始我们看到的“丢失的唤醒”问题。原始的 Unix 内核的 `sleep` 只是简单地屏蔽中断，由于 Unix 只在单处理器上运行，所以这样已经足够了。但是由于 xv6 要在多处理器上运行，所以它给 `sleep` 增加了一个现实的锁。FreeBSD 的 `msleep` 也使用了同样的方法。Plan 9 的 `sleep` 使用了一个回调函数，并在其返回到 `sleep` 中之前持有调度用的锁；这个函数对睡眠状态作了最后检查，以避免丢失的唤醒。Linux 内核的 `sleep` 用一个显式的进程队列代替 xv6 中的等待队列（wait channel）；而该队列本身内部还有锁。
 
