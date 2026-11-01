@@ -2314,22 +2314,22 @@ L2824, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/proc.c#L378
 于是该进程就会同时持有锁 `ptable.lock` 和 `lk` 了。调用者（例如 `recv`）是必须持有 `lk` 的，这样可以保证其他进程（例如一个正在运行的 `send`）无法调用 `wakeup(chan)`。而如今 `sleep` 已经持有了 `ptable.lock`，那么它现在就能安全地释放 `lk` 了：这样即使别的进程调用了 `wakeup(chan)`，`wakeup` 也不可能在没有持有 `ptable.lock` 的情况下运行，所以 `wakeup` 必须等待 `sleep` 让进程睡眠后才能运行。这样一来，`wakeup` 就不会错过 `sleep` 了。
 
 这里有一个复杂一点的情况：即 `lk` 就是 `ptable.lock` 的时候，这样 `sleep` 在要求持有 `ptable.lock` 然后又把它作为 `lk` 释放的时候会出现死锁。这种情况下，`sleep` 就会直接跳过这两个步骤（2567）。   
-L2567,  
-L2823,  
+L2567, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/proc.c#L357  
+L2823, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/proc.c#L377   
 例如，当 `wait`（2403）持有 `&ptable.lock` 时调用 `sleep`。    
-L2403,   
-L2864,   
+L2403, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/proc.c#L392  
+L2864, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/proc.c#L412  
 
 现在仅有该进程的 `sleep` 持有 `ptable.lock`，于是它通过记录睡眠队列，改变进程状态，调用 `sched`（2573-2575）让进程进入睡眠。  
-L2573-2575,  
-L2829-2831,  
+L2573-2575, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/proc.c#L363-L365  
+L2829-2831, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/proc.c#L383-L385  
 
-稍后，进程会调用 `wakeup(chan)`。`wakeup`（2603）  
-L2603,  
-L2864,   
+稍后，进程会调用 `wakeup(chan)`。`wakeup`（2603）   
+L2403, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/proc.c#L392  
+L2864, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/proc.c#L412  
 要求获得 `ptable.lock` 并调用 `wakeup1`，其中，实际工作是由 `wakeup1` 完成的。对于 `wakeup` 来说持有 `ptable.lock` 也是很重要的，因为它也要修改进程的状态并且要保证 `sleep` 和 `wakeup` 不会错过彼此。而之所以要单独实现一个 `wakeup1`，  
-L????,   
-L2853,  
+L????, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/proc.c#L381  
+L2853, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/proc.c#L401  
 是因为有时调度器会在持有 `ptable.lock` 的情况下唤醒进程，稍后我们会看到这样的例子。当 `wakeup` 找到了对应 `chan` 中处于 `SLEEPING` 的进程时，它将进程状态修改为 `RUNNABLE`。于是下一次调度器在运行时，就可以调度该进程了。
 
 `wackup` 必须在有一个监视唤醒条件的锁的时候才能被调用: 在上面的例子中这个锁就是 `q->lock`。至于为什么睡眠中的进程不会错过唤醒，则是因为从 `sleep` 检查进程状态之前，到进程进入睡眠之后，`sleep` 都持有进程状态的锁或者 `ptable.lock` 或者是两者兼有。由于 `wakeup` 必须在持有这两个锁的时候运行，所以它必须在 `sleep` 检查状态之前和一个进程已经完全进入睡眠后才能执行。
@@ -2347,31 +2347,31 @@ L2853,
 每个管道由一个结构体 `struct pipe` 表示，其中有一个锁 `lock`和内存缓冲区。其中的域 `nread` 和 `nwrite` 表示从缓冲区读出和写入的字节数。`pipe` 对缓冲区做了包装，使得虽然计数器继续增长，但实际上在 `buf[PIPESIZE - 1]` 之后写入的字节存放在 `buf[0]`。这样就让我们可以区分一个满的缓冲区（`nwrite == nread + PIPESIZE`）和一个空的缓冲区（`nwrite == nread`），但这也意味着我们必须使用 `buf[nread % PIPESIZE]` 而不是 `buf[nread]` 来读出/写入数据。现在假设 `piperead` 和 `pipewrite` 分别在两个 CPU 上连续执行。
 
 `pipewrite`（6080）首先请求获得管道的锁，    
-L6080,   
-L6530,   
+L6080, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/pipe.c#L78  
+L6530, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/pipe.c#L78  
 以保护计数器、数据以及相关不变量。`piperead`（6101）接着也请求获得锁，  
-L6101,   
-L6551,   
+L6101, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/pipe.c#L100  
+L6551, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/pipe.c#L100  
 结果当然是无法获得。于是它停在了 `acquire`（1474）上等待锁的释放。  
-L1474,   
-L1574,  
+L1474, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/spinlock.c#L25  
+L1574, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/spinlock.c#L25  
 与此同时，`pipewrite` 在循环中依次写入 `addr[0], addr[1], ..., addr[n-1]` 并添加到管道中（6094）。  
-L6094,   
-L6544,  
-在此循环中，缓冲区可能被写满（6086），
-L6086,  
-L6536,  
+L6094, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/pipe.c#L92  
+L6544, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/pipe.c#L92  
+在此循环中，缓冲区可能被写满（6086），  
+L6086, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/pipe.c#L84  
+L6536, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/pipe.c#L84  
 这时 `pipewrite` 会调用 `wakeup` 通知睡眠中的读者缓冲区中有数据可读，然后使得在 `&p->nwrite` 队列中睡眠的读者从缓冲区中读出数据。注意，`sleep` 在让 `pipewrite` 的进程进入睡眠时还会释放 `p->lock`。
 
 现在 `p->lock` 被释放了，`piperead` 尝试获得该锁然后开始执行：此时它会检查到 `p->nread != p->nwrite`（6106）  
-L6106,  
-L6556,  
+L6106, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/pipe.c#L105  
+L6556, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/pipe.c#L105  
 （正是在 `nwrite == nread + PIPESIZE`  （6086）的时候 `pipewrite` 进入了睡眠），于是 `piperead` 跳出 `for` 循环，将数据从管道中拷贝出来（6113-6117），  
-L6113-6117,  
-L6563-6567,  
+L6113-6117, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/pipe.c#L112-L116  
+L6563-6567, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/pipe.c#L112-L116  
 然后将 `nread` 增加读取字节数。现在缓冲区又多出了很多可写的字节，所以 `piperead` 调用 `wakeup`（6118）唤醒睡眠中的写者，    
-L6118,  
-L6568,  
+L6118, https://github.com/mit-pdos/xv6-public/blob/xv6-rev7/pipe.c#L117  
+L6568, https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/pipe.c#L117  
 然后返回到调用者中。`wakeup` 会找到在 `&p->nwrite` 队列上睡眠的进程，正是该进程之前在运行 `pipewrite` 时由于缓冲区满而停止了。然后 `wakeup` 将该进程标记为 `RUNNABLE`。
 
 #### 代码：`wait`, `exit`, `kill`
@@ -2427,7 +2427,7 @@ xv6 所实现的调度算法非常朴素，仅仅是让每个进程轮流执行�
 
 `sleep` 和 `wakeup` 是非常普通但有效的同步方法，当然还有很多其他的同步方法。同步要解决的第一个问题是本章开始我们看到的“丢失的唤醒”问题。原始的 Unix 内核的 `sleep` 只是简单地屏蔽中断，由于 Unix 只在单处理器上运行，所以这样已经足够了。但是由于 xv6 要在多处理器上运行，所以它给 `sleep` 增加了一个现实的锁。FreeBSD 的 `msleep` 也使用了同样的方法。Plan 9 的 `sleep` 使用了一个回调函数，并在其返回到 `sleep` 中之前持有调度用的锁；这个函数对睡眠状态作了最后检查，以避免丢失的唤醒。Linux 内核的 `sleep` 用一个显式的进程队列代替 xv6 中的等待队列（wait channel）；而该队列本身内部还有锁。
 
-在 `wakeup` 中遍历整个进程表来寻找对应 `chan` 的进程是非常低效的。更好的办法是用另一个结构体代替 `sleep` 和 `wakeup` 中的 `chan`，该结构体中维护了一个睡眠进程的链表。Plan 9 的 `sleep` 和 `wakeup` 把该结构体称为*集合点（rendezvous point）*或者 `Rendez`。许多线程库都把相同的一个结构体作为一个状态变量；如果是这样的话，`sleep` 和 `wakeup` 操作则被称为 `wait` 和 `signal`。所有此类机制都有同一个思想：使得睡眠状态可以被某种执行原子操作的锁保护。
+在 `wakeup` 中遍历整个进程表来寻找对应 `chan` 的进程是非常低效的。更好的办法是用另一个结构体代替 `sleep` 和 `wakeup` 中的 `chan`，该结构体中维护了一个睡眠进程的链表。Plan 9 的 `sleep` 和 `wakeup` 把该结构体称为 *集合点（rendezvous point）* 或者 `Rendez`。许多线程库都把相同的一个结构体作为一个状态变量；如果是这样的话，`sleep` 和 `wakeup` 操作则被称为 `wait` 和 `signal`。所有此类机制都有同一个思想：使得睡眠状态可以被某种执行原子操作的锁保护。
 
 在 `wakeup` 的实现中，它唤醒了特定队列中的所有进程，而有可能很多进程都在同一个队列中等待被唤醒。操作系统会调度这里的所有进程，它们会互相竞争以检查其睡眠状态。这样的一堆进程被称作*惊群（thundering herd）*，而我们最好是避免这种情况的发生。大多数的状态变量都有两种不同的 `wakeup`，一种唤醒一个进程，即 `signal`；另一种唤醒所有进程，即 `broadcast`。
 
