@@ -1,7 +1,7 @@
 # wmt_xv6_study
 [WIP] My xv6 document and sources study, based on jamesrxian/xv6-chinese
 
-## How to build and run in Ubuntu 14.04 32bit
+## How to build and run in Ubuntu 14.04 32bit (if use Ubuntu 16.04, be careful -no-pie)   
 * sudo apt update
 * sudo apt install gcc g++ make lftp gedit git qemu
 * (download zip file from https://github.com/mit-pdos/xv6-public/tree/xv6-rev9)  
@@ -15,6 +15,24 @@
 * (ubuntu 14.04, qemu-system-i386 --version, 2.0.0)  
 * (ubuntu 14.04 run, make qemu) xv6-public-xv6-rev9_ubuntu140432_make_qemu.tar.gz
 * (ubuntu 14.04 run, make qemu-memfs) xv6-public-xv6-rev9_ubuntu140432_make_qemu_memfs.tar.gz
+* Be careful about gcc param 'no-pie' in Makefile for Ubuntu 16.10   
+https://github.com/mit-pdos/xv6-public/blob/xv6-rev11/Makefile#L85-L91  
+```
+# Disable PIE when possible (for Ubuntu 16.10 toolchain)
+ifneq ($(shell $(CC) -dumpspecs 2>/dev/null | grep -e '[^f]no-pie'),)
+CFLAGS += -fno-pie -no-pie
+endif
+ifneq ($(shell $(CC) -dumpspecs 2>/dev/null | grep -e '[^f]nopie'),)
+CFLAGS += -fno-pie -nopie
+endif
+```  
+```
+想了一下，还是放弃研究xv6的gdb图形调试方法——
+有两个方面，首先gdb本身就不准（后退调用栈的内容可能是凌乱的），
+其次图形界面工具有各种更复杂问题，例如用vscode不知道怎么target remote。
+另外64位系统无法运行xv6的问题，似乎是因为只有最新版的xv6-public才有no-pie的编译选项
+（可能还有其它改动的地方），如果是旧版本的话这个64位机器无法正确运行在qemu上的bug没有被修复
+```
 
 ## References, books
 * https://github.com/jamesrxian/xv6-chinese/tree/rev9
