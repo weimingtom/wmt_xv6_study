@@ -164,6 +164,21 @@ https://github.com/weimingtom/wmt_ai_study/blob/master/fpga_cpld_001.md
 https://github.com/x653/xv6-riscv-fpga/blob/main/xv6-riscv/user/lisp.c  
 https://github.com/x653/xv6-riscv-fpga/blob/main/lisp/lisp.c  
 
+## tiny_x86_emu, An experimental x86 emulator written in Go
+* https://bobuhiro11.net/tiny_x86_emu/
+* https://github.com/bobuhiro11/tiny_x86_emu
+```
+方法一：使用专为 xv6 设计的 tiny_x86_emu (推荐)
+这是运行 xv6 镜像最直接的方法。tiny_x86_emu 项目的目标就是运行 xv6，并提供了简单的命令行接口。
+获取项目并编译：你需要安装 make, go, gcc, nasm 等依赖，然后在项目目录下执行 make 命令。这会同时编译出模拟器和 xv6 镜像。
+bash
+make
+运行 xv6 镜像：编译完成后，使用以下命令即可启动 xv6：
+bash
+./tiny_x86_emu -f xv6-public/xv6.img
+这条命令会加载并运行位于 xv6-public 目录下的 xv6.img 镜像文件。
+```
+
 ## xv6 weibo record
 ```
 上古神书，《操作系统设计与实现》，讲minix的，
