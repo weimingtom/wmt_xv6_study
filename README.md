@@ -1,7 +1,7 @@
 # wmt_xv6_study
 [WIP] My xv6 document and sources study, based on jamesrxian/xv6-chinese
 
-## How to build and run in Ubuntu 14.04 32bit (if use Ubuntu 16.04, be careful -no-pie)   
+## How to build and run in Ubuntu 14.04 32bit (if use Ubuntu 16.04, be careful '-no-pie') (Be careful '-O3' to '-g3 -gdwarf-2')    
 * sudo apt update
 * sudo apt install gcc g++ make lftp gedit git qemu
 * (download zip file from https://github.com/mit-pdos/xv6-public/tree/xv6-rev9)  
@@ -32,6 +32,32 @@ endif
 其次图形界面工具有各种更复杂问题，例如用vscode不知道怎么target remote。
 另外64位系统无法运行xv6的问题，似乎是因为只有最新版的xv6-public才有no-pie的编译选项
 （可能还有其它改动的地方），如果是旧版本的话这个64位机器无法正确运行在qemu上的bug没有被修复
+```
+* Be careful '-O3' to '-g3 -gdwarf-2' about debugging backtrace stack    
+https://github.com/mit-pdos/xv6-public/blob/xv6-rev9/Makefile#L77-L78  
+```
+CFLAGS = -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb -m32 -Werror -fno-omit-frame-pointer
+#CFLAGS = -fno-pic -static -fno-builtin -fno-strict-aliasing -fvar-tracking -fvar-tracking-assignments -O0 -g -Wall -MD -gdwarf-2 -m32 -Werror -fno-omit-frame-pointer
+```
+```
+我搞明白怎么用gdb调试xv6了，而不会看到乱了的调用栈。其实很多书都没说清楚，包括我手头上的书。改Makefile，
+把-O3改成-g3 -gdwarf-2。如果是xv6-rev9，有一个很明确的提示在注释上，但新版故意去掉了。
+另外gdb甚至可以调试用户空间的程序，例如cat README，方法是file _cat，b main，然后就可以断在main函数处
+
+我又想起来为什么我要在xubuntu 20而非ubuntu 14上调试xv6-public，是因为我想用Eclipse CDT或者VSCode，
+而这两个工具不支持32位。。。好吧，我觉得我还需要再研究一下，不过32位除了把-O3改成-g3 -gdwarf-2，
+就没什么特别的了，估计xubuntu会很容易解决 ​​​
+
+之前说xv6的三个版本的区别（rev7,rev9和rev11），但其实还有一个很重要的区别，rev9有一些便于调试的开关
+-g3 -gdwarf-2注释在rev11中被（故意）移除，所以最好的版本估计就只有rev9这个中间过渡版（不过我不是很确定）
+
+在ubuntu 14下用gdb和Eclipse-CDT调试xv6-public。
+（1）首先编译xv6-public xv6-rev9。最好用rev9版本，因为Makefile里面注释掉的-g -gdwarf-2参数，需要修改打开。
+sudo apt install qemu; make qemu-nox-gdb，用Ctrl+A X退出
+（2）打开控制台的另一个tab，用gdb调试（生成gdbinit文件，需要自己写set auto-load safe-path /）。
+（3）用Eclipse-CDT调试。sudo apt install eclipse-cdt，用eclipse命令打开，然后添加remote gdb调试，
+去掉.gdbinit，调试文件选择kernel即可。
+（4）其他gdb工具也可以，例如ddd，cgdb和gdbtui​​​
 ```
 
 ## References, books
