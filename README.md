@@ -1,6 +1,17 @@
 # wmt_xv6_study
 [WIP] My xv6 document and sources study, based on jamesrxian/xv6-chinese
 
+## How to build and run in Ubuntu 14.04 32bit
+* sudo apt update
+* sudo apt install gcc g++ make lftp gedit git qemu
+* (download zip file from https://github.com/mit-pdos/xv6-public/tree/xv6-rev9)  
+* unzip xv6-public-xv6-rev9.zip
+* cd xv6-public-xv6-rev9
+* make clean
+* make qemu
+* make qemu-memfs
+* make qemu-nox
+
 ## References, books
 * https://github.com/jamesrxian/xv6-chinese/tree/rev9
 * xv6-chinese-rev9_chrome.pdf  
