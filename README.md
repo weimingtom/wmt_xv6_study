@@ -11,6 +11,10 @@
 * make qemu
 * make qemu-memfs
 * make qemu-nox
+* (windows run, qemu.exe / qemu-system-x86_64.exe(use this) 0.9) qemu_0.9_xv6_test.7z, qemu.7z
+* (ubuntu 14.04, qemu-system-i386 --version, 2.0.0)  
+* (ubuntu 14.04 run, make qemu) xv6-public-xv6-rev9_ubuntu140432_make_qemu.tar.gz
+* (ubuntu 14.04 run, make qemu-memfs) xv6-public-xv6-rev9_ubuntu140432_make_qemu_memfs.tar.gz
 
 ## References, books
 * https://github.com/jamesrxian/xv6-chinese/tree/rev9
